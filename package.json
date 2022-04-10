@@ -1,0 +1,36 @@
+{
+    "name": "cordova-media-picker",
+    "version": "1.0.0",
+    "description": "A Cordova plugin for picking documents and images.",
+    "cordova": {
+      "id": "cordova-media-picker",
+      "platforms": [
+        "android",
+        "ios"
+      ]
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/raymondelferink/cordova-media-picker.git"
+    },
+    "keywords": [
+      "Documents",
+      "Files",
+      "Media",
+      "Picker",
+      "ecosystem:cordova",
+      "cordova-android"
+    ],
+    "engines": [
+      {
+        "name": "cordova",
+        "version": ">=3.0.0"
+      }
+    ],
+    "author": "Raymond Elferink <raymond@raycom.com>",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/raymondelferink/cordova-media-picker/issues"
+    },
+    "homepage": "https://github.com/raymondelferink/cordova-media-picker/"
+  }

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="cordova-media-picker" version="1.0.0">
+    <name>CordovaMediaPicker</name>
+
+    <description>A Cordova plugin for picking documents and images.</description>
+    <license>MIT</license>
+
+    <keywords>cordova,android,documents,picker, multiple</keywords>
+    <repo>https://github.com/raymondelferink/cordova-media-picker.git</repo>
+    <issue>https://github.com/raymondelferink/cordova-media-picker/issues</issue>
+  
+    <engines>
+        <engine name="cordova" version=">=3.0.0"/>
+    </engines>
+  
+    <js-module src="www/cordovamediapicker.js" name="CordovaMediaPicker">
+        <clobbers target="CordovaMediaPicker" />
+    </js-module>
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="CordovaMediaPicker">
+                <param name="android-package" value="com.raycom.cordova.plugin.CordovaMediaPicker"/>
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/CordovaMediaPicker.java" target-dir="src/com/raycom/cordova/plugin" />
+    </platform>
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="CordovaMediaPicker">
+                <param name="ios-package" value="CordovaMediaPicker" />
+            </feature>
+        </config-file>
+        <source-file src="src/ios/CordovaMediaPicker.swift" />
+        <dependency id="cordova-plugin-add-swift-support" version="2.0.2"/> 
+    </platform>
+</plugin>
