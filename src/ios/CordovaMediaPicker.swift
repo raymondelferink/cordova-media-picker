@@ -25,15 +25,10 @@ import Foundation
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
 
-    func callPicker (type: Int) {
-        var types = [String]()
-        if(type == 1){
-            types = ["public.image"]
-            
-        } else {
-            types = ["public.item"]
-        }
-       
+    func callPicker (options: [String: Any]) {
+        
+        var BlockCamera = options["blockcamera"] as? Boolean;
+
         self.showActionSheet(viewController: self.viewController, type: .all)
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
