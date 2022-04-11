@@ -38,6 +38,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 
+import org.apache.cordova.camera.CameraLauncher;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -77,23 +79,51 @@ public class CordovaMediaPicker extends CordovaPlugin {
         context = IS_AT_LEAST_LOLLIPOP ? cordova.getActivity().getWindow().getContext() : cordova.getActivity().getApplicationContext();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("Choose an animal");
+        // builder.setTitle("Choose an animal");
         // add a list
-        String[] animals = {"Image", "Video", "File", "Cancel"};
+        String[] animals = {"Camera", "Image", "Video", "File", "Cancel"};
         builder.setItems(animals, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
-                    case 0: // Image
+                    case 0:
+                        callbackContext.success('OPEN_CAMERA');
+                        JSONArray data = new JSONArray();
+                        /*
+                        data.put(50);   //var quality = getValue(options.quality, 50);
+                        data.put(0);   //var destinationType = getValue(options.destinationType, Camera.DestinationType.FILE_URI);
+                        data.put(1);   //var sourceType = getValue(options.sourceType, Camera.PictureSourceType.CAMERA);
+                        data.put(-1);   //var targetWidth = getValue(options.targetWidth, -1);
+                        data.put(-1);   //var targetHeight = getValue(options.targetHeight, -1);
+                        data.put(0);   //var encodingType = getValue(options.encodingType, Camera.EncodingType.JPEG);
+                        data.put(0);   //var mediaType = getValue(options.mediaType, Camera.MediaType.PICTURE);
+                        data.put(false);   //var allowEdit = !!options.allowEdit;
+                        data.put(true);   //var correctOrientation = !!options.correctOrientation;
+                        data.put(false);   //var saveToPhotoAlbum = !!options.saveToPhotoAlbum;
+                        data.put(null);   //var popoverOptions = getValue(options.popoverOptions, null);
+                        data.put(0);   //var cameraDirection = getValue(options.cameraDirection, Camera.Direction.BACK);
+                        try {
+                            CameraLauncher Camera = new CameraLauncher();
+                            CallbackContext newCallbackContext = callbackContext;
+                            
+                            Camera.execute("takePicture", data, newCallbackContext);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Log.d("error", "onActivityResult: " + e.toString());
+                            callbackContext.error("Call CameraLauncher failed");
+                        }
+                        */
+                        break;
+                    case 1: // Image
                         chooseImage(callbackContext);
                         break;
-                    case 1: // Video
+                    case 2: // Video
                         chooseVideo(callbackContext);
                         break;
-                    case 2: // File
+                    case 3: // File
                         chooseFile(callbackContext);
                         break;
-                    case 3: // Cancel
+                    case 4: // Cancel
                         callbackContext.error("Action cancelled");
                         break;
                 }
