@@ -2,18 +2,20 @@ package com.raycom.cordova.plugin;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.media.ExifInterface;
-import android.media.MediaScannerConnection;
-import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,6 +27,7 @@ import android.util.Base64;
 import android.util.Log;
 
 // Cordova-required packages
+import org.apache.cordova.BuildHelper;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.LOG;
@@ -36,95 +39,73 @@ import org.json.JSONObject;
 import org.w3c.dom.Document;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
-public class CordovaMediaPicker extends CordovaPlugin implements MediaScannerConnectionClient {
-    private CallbackContext callback;
-    private boolean base64;
-    private int mQuality;                   // Compression quality hint (0-100: 0=low quality & high compression, 100=compress of max quality)
-    protected final static String[] permissions = { Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE };
-    private static final int CAMERA = 1;                // Take picture from camera
-    private static final int DATA_URL = 0;              // Return base64 encoded string
-    private static final int FILE_URI = 1;              // Return file uri (content://media/external/images/media/2 for Android)
-    private static final int JPEG = 0;                  // Take a picture of type JPEG
-    private static final int PNG = 1;                  // Take a picture of type PNG
-    private static final String JPEG_TYPE = "jpg";
-    private static final String PNG_TYPE = "png";
-    private static final String JPEG_EXTENSION = "." + JPEG_TYPE;
-    private static final String PNG_EXTENSION = "." + PNG_TYPE;
-    private static final String PNG_MIME_TYPE = "image/png";
-    private static final String JPEG_MIME_TYPE = "image/jpeg";
+public class CordovaMediaPicker extends CordovaPlugin {
+    public CallbackContext callbackContext;
+    public Context context = null;
+    private static final boolean IS_AT_LEAST_LOLLIPOP = Build.VERSION.SDK_INT >= 21;
+
     public static final int REQUEST_CODE = 1;
     public static final int PERMISSION_DENIED_ERROR = 20;
-    public static final int CHOOSE_CAMERA_SEC = 0;
     public static final int CHOOSE_FILE_SEC = 1;
     public static final int CHOOSE_IMAGE_SEC = 2;
     public static final int CHOOSE_VIDEO_SEC = 3;
-    public static final int ACTION_CAMERA = 0;
     public static final int ACTION_FILE = 1;
     public static final int ACTION_IMAGE = 2;
     public static final int ACTION_VIDEO = 3;
-
-    private Uri imageUri;                   // Uri of captured image
+    
     private int currentAction;              // Current action
+    private String applicationId;
 
     @Override
     public boolean execute(String action, JSONArray args,
       final CallbackContext callbackContext) {
         /* Verify that the user sent a 'pick' action */
         if (!action.equals("pick")) {
-            callbackContext.error("\"" + action + "\" is not a recognized action.");
+            callbackContext.error("\"" + action + "\" is not a supported action.");
             return false;
         }
-        this.mQuality = 50;
+        this.applicationId = (String) BuildHelper.getBuildConfigValue(cordova.getActivity(), "APPLICATION_ID");
+        this.applicationId = preferences.getString("applicationId", this.applicationId);
+
         this.callbackContext = callbackContext;
-        chooseFile(callbackContext);
+
+        context = IS_AT_LEAST_LOLLIPOP ? cordova.getActivity().getWindow().getContext() : cordova.getActivity().getApplicationContext();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Choose an animal");
+        // add a list
+        String[] animals = {"Image", "Video", "File", "Cancel"};
+        builder.setItems(animals, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case 0: // Image
+                        chooseImage(callbackContext);
+                        break;
+                    case 1: // Video
+                        chooseVideo(callbackContext);
+                        break;
+                    case 2: // File
+                        chooseFile(callbackContext);
+                        break;
+                    case 3: // Cancel
+                        callbackContext.error("Action cancelled");
+                        break;
+                }
+            }
+        });
+        // create and show the alert dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
         
         return true;
         
-    }
-
-    public void chooseCamera (CallbackContext callbackContext) {
-        this.currentAction = ACTION_CAMERA;
-        List<String> permissions = new ArrayList<String>();
-        boolean setPermissions = false;
-        if (!PermissionHelper.hasPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) {
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
-        if (!PermissionHelper.hasPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) {
-            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-        if (!PermissionHelper.hasPermission(this, Manifest.permission.CAMERA) {
-            permissions.add(Manifest.permission.CAMERA);
-        }
-        if (permissions.size()) {
-            String[] simpleArray = new String[ permissions.size() ];
-            permissions.toArray( simpleArray );
-            PermissionHelper.requestPermissions(this, CHOOSE_CAMERA_SEC, permissions);
-
-        } else {
-            //todo camera stuff
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-            // Specify file so that large image is captured and returned
-            File photo = createCaptureFile(JPEG, "");
-            this.imageFilePath = photo.getAbsolutePath();
-            this.imageUri = FileProvider.getUriForFile(cordova.getActivity(),
-                    applicationId + ".cordova.media.picker",
-                    photo);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
-            //We can write to this URI, this will hopefully allow us to write files to get to the next step
-            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-
-            PackageManager mPm = this.cordova.getActivity().getPackageManager();
-            if(intent.resolveActivity(mPm) != null) {
-                cordova.startActivityForResult((CordovaPlugin) this, intent, (CAMERA + 1) * 16 + DATA_URL + 1);
-            } else {
-                LOG.d("CameraLauncher", "Error: You don't have a default camera.  Your device may not be CTS complaint.");
-            }
-        }
-
     }
 
     public void chooseImage (CallbackContext callbackContext) {
@@ -182,9 +163,6 @@ public class CordovaMediaPicker extends CordovaPlugin implements MediaScannerCon
             }
         }
         switch (requestCode) {
-            case CHOOSE_CAMERA_SEC:
-                chooseCamera(this.callbackContext);
-                break;
             case CHOOSE_FILE_SEC:
                 chooseFile(this.callbackContext);
                 break;
@@ -204,9 +182,6 @@ public class CordovaMediaPicker extends CordovaPlugin implements MediaScannerCon
         if (resultCode == Activity.RESULT_OK) {
 
             switch(this.currentAction){
-                case ACTION_CAMERA:
-                    handleCamera(data);
-                    break;
                 case ACTION_IMAGE:
                 case ACTION_FILE:
                 case ACTION_VIDEO:
@@ -219,79 +194,6 @@ public class CordovaMediaPicker extends CordovaPlugin implements MediaScannerCon
         } else {
             this.callbackContext.error("Execute failed");
         }
-    }
-
-    private void handleCamera(Intent data){
-        int rotate = 0;
-        String sourcePath = this.imageFilePath;
-
-        // Create an ExifHelper to save the exif data that is lost during compression
-        ExifHelper exif = new ExifHelper();
-
-        try {
-            exif.createInFile(sourcePath);
-            exif.readExifData();
-            rotate = exif.getOrientation();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        Bitmap bitmap = null;
-
-        bitmap = getScaledAndRotatedBitmap(sourcePath);
-
-        if (bitmap == null) {
-            // Try to get the bitmap from intent.
-            bitmap = (Bitmap) data.getExtras().get("data");
-        }
-
-        // Double-check the bitmap.
-        if (bitmap == null) {
-            this.callbackContext.error("Unable to create bitmap!");
-            return;
-        }
-
-        this.processPicture(bitmap, this.encodingType);
-
-        ByteArrayOutputStream jpeg_data = new ByteArrayOutputStream();
-
-        try {
-            if (bitmap.compress(CompressFormat.JPEG, mQuality, jpeg_data)) {
-                byte[] code = jpeg_data.toByteArray();
-                // byte[] output = Base64.encode(code, Base64.NO_WRAP);
-                // String js_out = new String(output);
-                String ansValue = Base64.encodeToString(code,Base64.DEFAULT);
-
-                JSONArray results = new JSONArray();
-                JSONObject result = new JSONObject();
-                result.put("base64", ansValue);
-                result.put("name", System.currentTimeMillis() + "." + JPEG_TYPE;
-                result.put("type", JPEG_MIME_TYPE);
-                results.put(result);
-
-                this.callbackContext.success(results.toString());
-                code = null;
-            }
-        } catch (Exception e) {
-            this.callbackContext.error("Error compressing image: "+e.getLocalizedMessage());
-        }
-        jpeg_data = null;
-
-
-        // check this out:
-        // checkForDuplicateImage(DATA_URL);
-        
-        // cleanup
-        if (bitmap != null) {
-            bitmap.recycle();
-        }
-        // Clean up initial camera-written image file.
-        (new File(FileHelper.stripFileProtocol(this.imageUri.toString()))).delete();
-
-        System.gc();
-        bitmap = null;
-
     }
 
     private void handleFile(Intent data){
@@ -376,28 +278,5 @@ public class CordovaMediaPicker extends CordovaPlugin implements MediaScannerCon
             byteBuffer.write(buffer, 0, len);
         }
         return byteBuffer.toByteArray();
-    }
-    
-    private File createCaptureFile(int encodingType, String fileName) {
-        if (fileName.isEmpty()) {
-            fileName = ".Pic";
-        }
-
-        if (encodingType == JPEG) {
-            fileName = fileName + JPEG_EXTENSION;
-        } else if (encodingType == PNG) {
-            fileName = fileName + PNG_EXTENSION;
-        } else {
-            throw new IllegalArgumentException("Invalid Encoding Type: " + encodingType);
-        }
-
-        return new File(getTempDirectoryPath(), fileName);
-    }
-
-    private String getTempDirectoryPath() {
-        File cache = cordova.getActivity().getCacheDir();
-        // Create the cache directory if it doesn't exist
-        cache.mkdirs();
-        return cache.getAbsolutePath();
     }
 }
