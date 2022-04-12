@@ -7,7 +7,7 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
     var cordovaPluginCameraInstalled = (navigator.camera && navigator.camera.getPicture)?true:false;
     if (!cordovaPluginCameraInstalled) {
         //only do this on android
-        options.blockcamera = true;
+        options.camera = false;
     }
     
     var cameraCallback = function(result) {

@@ -4,7 +4,9 @@ import Foundation
 
 @objc(CordovaMediaPicker) class CordovaMediaPicker : CDVPlugin {
     var commandCallback: String?
-    var blockCamera: Bool?
+    var allowCamera = true
+    var lastInfo: [String : Any]?
+
     enum MediaType {
         case image
         case media
@@ -28,10 +30,10 @@ import Foundation
 
     func callPicker (options: NSDictionary) {
         
-        if (options["blockcamera"] != nil) {
-            self.blockCamera = (options["blockcamera"] as! Bool);
+        if (options["camera"] != nil) {
+            self.allowCamera = (options["camera"] as! Bool);
         } else {
-            self.blockCamera = false;
+            self.allowCamera = true;
         }
 
         self.showActionSheet(viewController: self.viewController, type: .all)
@@ -61,9 +63,14 @@ import Foundation
         self.imagePickerBlock = { (file) -> Void in
             do {
                 let fileData = try! Data.init(contentsOf: file)
-                let base64String: String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
 
-                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": self.detectMimeType(file)]])
+                let mimeType = self.detectMimeType(file)
+                var base64String: String = ""
+                if (mimeType.starts(with: "image")) {
+                    base64String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
+                }
+                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": mimeType]])
+
                 if let message = try String(
                     data: JSONSerialization.data(
                         withJSONObject: result,
@@ -85,9 +92,14 @@ import Foundation
         self.videoPickerBlock = { (file) -> Void in
             do {
                 let fileData = try! Data.init(contentsOf: file)
-                let base64String: String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
 
-                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": self.detectMimeType(file)]])
+                let mimeType = self.detectMimeType(file)
+                var base64String: String = ""
+                if (mimeType.starts(with: "image")) {
+                    base64String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
+                }
+                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": mimeType]])
+
                 if let message = try String(
                     data: JSONSerialization.data(
                         withJSONObject: result,
@@ -109,11 +121,14 @@ import Foundation
         self.filePickerBlock = { (file) -> Void in
             do {
                 let fileData = try! Data.init(contentsOf: file)
-                let base64String: String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
 
-                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": self.detectMimeType(file)]])
-                
-                
+                let mimeType = self.detectMimeType(file)
+                var base64String: String = ""
+                if (mimeType.starts(with: "image")) {
+                    base64String = fileData.base64EncodedString(options: NSData.Base64EncodingOptions.init(rawValue: 0))
+                }
+                let result = ([["uri": file.absoluteString, "base64": base64String, "name": file.lastPathComponent, "type": mimeType]])
+
                 if let message = try String(
                     data: JSONSerialization.data(
                         withJSONObject: result,
@@ -180,7 +195,7 @@ import Foundation
         currentViewController = viewController
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        if (!self.blockCamera) {
+        if (self.allowCamera) {
             let camera = UIAlertAction(title: Constants.camera, style: .default, handler: { (action) -> Void in
                self.camera()
             })
@@ -265,37 +280,40 @@ import Foundation
 }
 
 extension CordovaMediaPicker: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-   func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-      currentViewController.dismiss(animated: true, completion: nil)
-   }
-   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-      if let image = info[UIImagePickerControllerImageURL] as? URL {
-         imagePickerBlock?(image) //return image when not null
-      }
-      else if let videoUrl = info[UIImagePickerControllerMediaURL] as? URL {
-         //let data = try? Data(contentsOf: videoUrl)
-         videoPickerBlock?(videoUrl) //return video url when not null
-      }
-      else if let image = info[UIImagePickerControllerOriginalImage] as? UIImage {
-          let strBase64:String = UIImageJPEGRepresentation(image, 1)?.base64EncodedString() ?? ""
-          cameraPickerBlock?(strBase64) //return image when not null
-      }
-      else{
-          print("Something went wrong")
-      }
-      currentViewController.dismiss(animated: true, completion: nil)
-   }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        currentViewController.dismiss(animated: true, completion: nil)
+    }
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        self.lastInfo = info;
+
+        if let image = info[UIImagePickerControllerImageURL] as? URL {
+            imagePickerBlock?(image) //return image when not null
+        }
+        else if let videoUrl = info[UIImagePickerControllerMediaURL] as? URL {
+            //let data = try? Data(contentsOf: videoUrl)
+            videoPickerBlock?(videoUrl) //return video url when not null
+        }
+        else if let image = info[UIImagePickerControllerOriginalImage] as? UIImage {
+            let strBase64:String = UIImageJPEGRepresentation(image, 1)?.base64EncodedString() ?? ""
+            cameraPickerBlock?(strBase64) //return image when not null
+        }
+        else{
+            print("Something went wrong")
+        }
+        currentViewController.dismiss(animated: true, completion: nil)
+    }
 }
 
 extension CordovaMediaPicker: UIDocumentPickerDelegate  {
-   func documentMenu(_ documentMenu: UIDocumentPickerViewController, didPickDocumentPicker documentPicker: UIDocumentPickerViewController) {
-      documentPicker.delegate = self
-      currentViewController.present(documentPicker, animated: true, completion: nil)
-   }
-   func documentPicker(_ controller: UIDocumentPickerViewController,   didPickDocumentAt url: URL) {
-      filePickerBlock?(url) //return file url if you selected from drive.
-   }
-   func documentMenuWasCancelled(_ documentMenu: UIDocumentPickerViewController) {
-      currentViewController.dismiss(animated: true, completion: nil)
-   }
+    func documentMenu(_ documentMenu: UIDocumentPickerViewController, didPickDocumentPicker documentPicker: UIDocumentPickerViewController) {
+        documentPicker.delegate = self
+        currentViewController.present(documentPicker, animated: true, completion: nil)
+    }
+    func documentPicker(_ controller: UIDocumentPickerViewController,   didPickDocumentAt url: URL) {
+        filePickerBlock?(url) //return file url if you selected from drive.
+    }
+    func documentMenuWasCancelled(_ documentMenu: UIDocumentPickerViewController) {
+        currentViewController.dismiss(animated: true, completion: nil)
+    }
 }
