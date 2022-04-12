@@ -81,61 +81,97 @@ public class CordovaMediaPicker extends CordovaPlugin {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         // builder.setTitle("Choose an animal");
         // add a list
-        String[] animals = {"Camera", "Image", "Video", "File", "Cancel"};
-        builder.setItems(animals, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0:
-                        callbackContext.success('OPEN_CAMERA');
-                        JSONArray data = new JSONArray();
-                        /*
-                        data.put(50);   //var quality = getValue(options.quality, 50);
-                        data.put(0);   //var destinationType = getValue(options.destinationType, Camera.DestinationType.FILE_URI);
-                        data.put(1);   //var sourceType = getValue(options.sourceType, Camera.PictureSourceType.CAMERA);
-                        data.put(-1);   //var targetWidth = getValue(options.targetWidth, -1);
-                        data.put(-1);   //var targetHeight = getValue(options.targetHeight, -1);
-                        data.put(0);   //var encodingType = getValue(options.encodingType, Camera.EncodingType.JPEG);
-                        data.put(0);   //var mediaType = getValue(options.mediaType, Camera.MediaType.PICTURE);
-                        data.put(false);   //var allowEdit = !!options.allowEdit;
-                        data.put(true);   //var correctOrientation = !!options.correctOrientation;
-                        data.put(false);   //var saveToPhotoAlbum = !!options.saveToPhotoAlbum;
-                        data.put(null);   //var popoverOptions = getValue(options.popoverOptions, null);
-                        data.put(0);   //var cameraDirection = getValue(options.cameraDirection, Camera.Direction.BACK);
-                        try {
-                            CameraLauncher Camera = new CameraLauncher();
-                            CallbackContext newCallbackContext = callbackContext;
-                            
-                            Camera.execute("takePicture", data, newCallbackContext);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Log.d("error", "onActivityResult: " + e.toString());
-                            callbackContext.error("Call CameraLauncher failed");
-                        }
-                        */
-                        break;
-                    case 1: // Image
-                        chooseImage(callbackContext);
-                        break;
-                    case 2: // Video
-                        chooseVideo(callbackContext);
-                        break;
-                    case 3: // File
-                        chooseFile(callbackContext);
-                        break;
-                    case 4: // Cancel
-                        callbackContext.error("Action cancelled");
-                        break;
-                }
+        var options = [];
+        var optionCount = 0;
+        if (!args.isNull("all") ) {
+            // do nothing, all options will be set
+        } else {
+            if (!args.isNull("camera") && args.camera) {
+                options.append("Camera");
+                optionCount++;
             }
-        });
-        // create and show the alert dialog
-        AlertDialog dialog = builder.create();
-        dialog.show();
+            if (!args.isNull("gallery") && args.gallery) {
+                options.append("Gallery");
+                optionCount++;
+            }
+            if (!args.isNull("video") && args.video) {
+                options.append("Video");
+                optionCount++;
+            }
+            if (!args.isNull("file") && args.file) {
+                options.append("File");
+                optionCount++;
+            }
+        }
+        if (optionCount === 0) {
+            options = ["Camera", "Gallery", "Video", "File"];
+            optionCount = 4;
+        }
 
+        if (optionCount === 1) {
+             handleOption(options[0]);
+        } else {
+            options.append("Cancel");
+            builder.setItems(options, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    var option = options[which];
+                    handleOption(option);
+                }
+            });
+            // create and show the alert dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+        }
         
         return true;
         
+    }
+
+    public void handleOption (String option) {
+        switch (option) {
+            case "Camera":
+                callbackContext.success('OPEN_CAMERA');
+                JSONArray data = new JSONArray();
+                /*
+                data.put(50);   //var quality = getValue(options.quality, 50);
+                data.put(0);   //var destinationType = getValue(options.destinationType, Camera.DestinationType.FILE_URI);
+                data.put(1);   //var sourceType = getValue(options.sourceType, Camera.PictureSourceType.CAMERA);
+                data.put(-1);   //var targetWidth = getValue(options.targetWidth, -1);
+                data.put(-1);   //var targetHeight = getValue(options.targetHeight, -1);
+                data.put(0);   //var encodingType = getValue(options.encodingType, Camera.EncodingType.JPEG);
+                data.put(0);   //var mediaType = getValue(options.mediaType, Camera.MediaType.PICTURE);
+                data.put(false);   //var allowEdit = !!options.allowEdit;
+                data.put(true);   //var correctOrientation = !!options.correctOrientation;
+                data.put(false);   //var saveToPhotoAlbum = !!options.saveToPhotoAlbum;
+                data.put(null);   //var popoverOptions = getValue(options.popoverOptions, null);
+                data.put(0);   //var cameraDirection = getValue(options.cameraDirection, Camera.Direction.BACK);
+                try {
+                    CameraLauncher Camera = new CameraLauncher();
+                    CallbackContext newCallbackContext = callbackContext;
+
+                    Camera.execute("takePicture", data, newCallbackContext);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.d("error", "onActivityResult: " + e.toString());
+                    callbackContext.error("Call CameraLauncher failed");
+                }
+                */
+                break;
+            case "Gallery": // Gallery
+                chooseImage(callbackContext);
+                break;
+            case "Video": // Video
+                chooseVideo(callbackContext);
+                break;
+            case "File": // File
+                chooseFile(callbackContext);
+                break;
+            case "Cancel": // Cancel
+                callbackContext.error("Action cancelled");
+                break;
+        }
     }
 
     public void chooseImage (CallbackContext callbackContext) {

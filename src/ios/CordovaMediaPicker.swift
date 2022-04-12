@@ -4,14 +4,15 @@ import Foundation
 
 @objc(CordovaMediaPicker) class CordovaMediaPicker : CDVPlugin {
     var commandCallback: String?
-    var allowCamera = true
+
+    var allowCamera = false
+    var allowGallery = false
+    var allowVideo = false
+    var allowFile = false
+    var allowedOptions = 0;
+    
     var lastInfo: [String : Any]?
 
-    enum MediaType {
-        case image
-        case media
-        case all
-    }
     struct Constants {
        static let camera = "Camera"
        static let gallery = "Gallery"
@@ -29,14 +30,45 @@ import Foundation
     var filePickerBlock: ((_ url: URL) -> Void)?
 
     func callPicker (options: NSDictionary) {
+        self.allowedOptions = 0;
         
-        if (options["camera"] != nil) {
-            self.allowCamera = (options["camera"] as! Bool);
-        } else {
-            self.allowCamera = true;
+        if (options["all"] != nil) {
+            // set none, so all will be set automatically
+        } else { 
+            if (options["camera"] != nil) {
+                self.allowCamera = (options["camera"] as! Bool);
+                if (self.allowCamera) self.allowedOptions+=1
+            } else {
+                self.allowCamera = false;
+            }
+            if (options["gallery"] != nil) {
+                self.allowGallery = (options["gallery"] as! Bool);
+                if (self.allowGallery) self.allowedOptions+=1
+            } else {
+                self.allowGallery = false;
+            }
+            if (options["video"] != nil) {
+                self.allowVideo = (options["video"] as! Bool);
+                if (self.allowVideo) self.allowedOptions+=1
+            } else {
+                self.allowVideo = false;
+            }
+            if (options["file"] != nil) {
+                self.allowFile = (options["file"] as! Bool);
+                if (self.allowFile) self.allowedOptions+=1
+            } else {
+                self.allowFile = false;
+            }
         }
 
-        self.showActionSheet(viewController: self.viewController, type: .all)
+        if (self.allowedOptions = 0) {
+            self.allowCamera = true;
+            self.allowGallery = true;
+            self.allowVideo = true;
+            self.allowFile = true;
+            self.allowedOptions = 4
+        }
+
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
             do {
@@ -146,6 +178,20 @@ import Foundation
                 self.sendError(error.localizedDescription)
             }
         }
+
+        if (self.allowedOptions > 1) {
+            self.showActionSheet(viewController: self.viewController)
+        } else if (self.allowCamera) {
+            self.camera()
+        } else if (self.allowGallery) {
+            self.photoLibrary()
+        } else if (self.allowVideo) {
+            self.video()
+        } else if (self.allowFile) {
+            self.file()
+        } else {
+            self.sendError("No options allowed")
+        }
     }
     @objc(pick:)
     func pick(command: CDVInvokedUrlCommand) {
@@ -191,7 +237,7 @@ import Foundation
        currentViewController.present(importMenuViewController, animated: true, completion: nil)
     }
 
-    func showActionSheet(viewController: UIViewController, type: MediaType) {
+    func showActionSheet(viewController: UIViewController) {
         currentViewController = viewController
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
@@ -202,24 +248,25 @@ import Foundation
             actionSheet.addAction(camera)
         }
 
-
-        let gallery = UIAlertAction(title: Constants.gallery, style: .default, handler: { (action) -> Void in
-            self.photoLibrary()
-        })
-        actionSheet.addAction(gallery)
-
-        let video = UIAlertAction(title: Constants.video, style: .default, handler: { (action) -> Void in
-            self.video()
-        })
-        let file = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
-            self.file()
-        })
-        if type == .media {
-           actionSheet.addAction(video)
+        if (self.allowGallery) {
+            let gallery = UIAlertAction(title: Constants.gallery, style: .default, handler: { (action) -> Void in
+                self.photoLibrary()
+            })
+            actionSheet.addAction(gallery)
         }
-        else if type == .all {
-           actionSheet.addAction(video)
-           actionSheet.addAction(file)
+
+        if (self.allowVideo) {
+            let video = UIAlertAction(title: Constants.video, style: .default, handler: { (action) -> Void in
+                self.video()
+            })
+            actionSheet.addAction(video)
+        }
+
+        if (self.allowFile) {
+            let file = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+                self.file()
+            })
+            actionSheet.addAction(file)
         }
 
         let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
