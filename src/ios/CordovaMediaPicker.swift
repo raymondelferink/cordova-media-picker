@@ -29,39 +29,39 @@ import Foundation
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
 
-    func callPicker (options: NSDictionary) {
+    func callPicker (options: NSArray) {
         self.allowedOptions = 0;
         
-        if (options["all"] != nil) {
+        if (options[0] != nil) {
             // set none, so all will be set automatically
         } else { 
-            if (options["camera"] != nil) {
-                self.allowCamera = (options["camera"] as! Bool);
-                if (self.allowCamera) self.allowedOptions+=1
+            if (options[1] != nil) {
+                self.allowCamera = (options[1] as! Bool);
+                if (self.allowCamera) {self.allowedOptions+=1}
             } else {
                 self.allowCamera = false;
             }
-            if (options["gallery"] != nil) {
-                self.allowGallery = (options["gallery"] as! Bool);
-                if (self.allowGallery) self.allowedOptions+=1
+            if (options[2] != nil) {
+                self.allowGallery = (options[2] as! Bool);
+                if (self.allowGallery) {self.allowedOptions+=1}
             } else {
                 self.allowGallery = false;
             }
-            if (options["video"] != nil) {
-                self.allowVideo = (options["video"] as! Bool);
-                if (self.allowVideo) self.allowedOptions+=1
+            if (options[3] != nil) {
+                self.allowVideo = (options[3] as! Bool);
+                if (self.allowVideo) {self.allowedOptions+=1}
             } else {
                 self.allowVideo = false;
             }
-            if (options["file"] != nil) {
-                self.allowFile = (options["file"] as! Bool);
-                if (self.allowFile) self.allowedOptions+=1
+            if (options[4] != nil) {
+                self.allowFile = (options[4] as! Bool);
+                if (self.allowFile) {self.allowedOptions+=1}
             } else {
                 self.allowFile = false;
             }
         }
 
-        if (self.allowedOptions = 0) {
+        if (self.allowedOptions == 0) {
             self.allowCamera = true;
             self.allowGallery = true;
             self.allowVideo = true;
@@ -196,7 +196,7 @@ import Foundation
     @objc(pick:)
     func pick(command: CDVInvokedUrlCommand) {
         self.commandCallback = command.callbackId
-        let options = command.arguments.first as! NSDictionary
+        let options = command.arguments.first as! NSArray
 
          self.callPicker(options: options)
     }

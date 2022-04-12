@@ -44,6 +44,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CordovaMediaPicker extends CordovaPlugin {
@@ -79,36 +80,41 @@ public class CordovaMediaPicker extends CordovaPlugin {
         context = IS_AT_LEAST_LOLLIPOP ? cordova.getActivity().getWindow().getContext() : cordova.getActivity().getApplicationContext();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        // builder.setTitle("Choose an animal");
-        // add a list
-        var options = [];
-        var optionCount = 0;
-        if (!args.isNull("all") ) {
+        
+        List<String> optionlist = new ArrayList<String>();
+        
+        int optionCount = 0;
+        if (!args.isNull(0) ) {
             // do nothing, all options will be set
         } else {
-            if (!args.isNull("camera") && args.camera) {
-                options.append("Camera");
+            if (!args.isNull(1) && args.get(1) == 1) {
+                optionlist.add("Camera");
                 optionCount++;
             }
-            if (!args.isNull("gallery") && args.gallery) {
-                options.append("Gallery");
+            if (!args.isNull(2) && args.get(2) == 1) {
+                optionlist.add("Gallery");
                 optionCount++;
             }
-            if (!args.isNull("video") && args.video) {
-                options.append("Video");
+            if (!args.isNull(3) && args.get(3) == 1) {
+                optionlist.add("Video");
                 optionCount++;
             }
-            if (!args.isNull("file") && args.file) {
-                options.append("File");
+            if (!args.isNull(4) && args.get(4) == 1) {
+                optionlist.add("File");
                 optionCount++;
             }
         }
-        if (optionCount === 0) {
-            options = ["Camera", "Gallery", "Video", "File"];
+        if (optionCount == 0) {
+            optionlist.add("Camera");
+            optionlist.add("Gallery");
+            optionlist.add("Video");
+            optionlist.add("File");
             optionCount = 4;
         }
+        
+        String[] options = optionlist.toArray(new String[0]);
 
-        if (optionCount === 1) {
+        if (optionCount == 1) {
              handleOption(options[0]);
         } else {
             options.append("Cancel");
@@ -132,7 +138,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
     public void handleOption (String option) {
         switch (option) {
             case "Camera":
-                callbackContext.success('OPEN_CAMERA');
+                callbackContext.success("OPEN_CAMERA");
                 JSONArray data = new JSONArray();
                 /*
                 data.put(50);   //var quality = getValue(options.quality, 50);
@@ -315,7 +321,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 }
             }
             
-            if (result.type.startsWith("image") {
+            if (result.type.startsWith("image")) {
                 try {
                     InputStream in = contentResolver.openInputStream(uri);
                     byte[] bytes = getBytes(in);
