@@ -1,13 +1,26 @@
 var exec = require('cordova/exec');
+var argscheck = require('cordova/argscheck');
 
 function CordovaMediaPicker() {}
 
 CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCallback) {
     
     var cordovaPluginCameraInstalled = (navigator.camera && navigator.camera.getPicture)?true:false;
+    options = options || {};
+    var getValue = argscheck.getValue;
+
+    var picker_options = {};
+    if ("all" in options && options.all) {
+        picker_options.all = true;
+    } else {
+        picker_options.camera = getValue(options.camera, false);
+        picker_options.gallery = getValue(options.gallery, false);
+        picker_options.video = getValue(options.video, false);
+        picker_options.file = getValue(options.file, false);  
+    }
     if (!cordovaPluginCameraInstalled) {
         //only do this on android
-        options.camera = false;
+        picker_options.camera = false;
     }
     
     var cameraCallback = function(result) {
@@ -18,7 +31,7 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
         successCallback(results);
     };
     
-    var interimCallback = function(result) {
+    var catchCallback = function(result) {
         if (cordovaPluginCameraInstalled && result === 'OPEN_CAMERA') {
             var args = [
                 50,         //var quality = getValue(options.quality, 50);
@@ -39,7 +52,7 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
         successCallback(result);
     };
     
-    exec(interimCallback, errorCallback, 'CordovaMediaPicker', 'pick', [options]);
+    exec(catchCallback, errorCallback, 'CordovaMediaPicker', 'pick', [picker_options]);
     
 };
 
