@@ -255,24 +255,10 @@ public class CordovaMediaPicker extends CordovaPlugin {
             String uriString = uri.toString();
             Log.d("data", "onActivityResult: uri"+uriString);
 
-            try {
-                Context context = cordova.getContext();
-                InputStream in = context.getContentResolver().openInputStream(uri);
-                byte[] bytes = getBytes(in);
-                Log.d("data", "onActivityResult: bytes size="+bytes.length);
-                Log.d("data", "onActivityResult: Base64string="+Base64.encodeToString(bytes,Base64.DEFAULT));
-                String ansValue = Base64.encodeToString(bytes,Base64.DEFAULT);
-                result.put("base64", ansValue);
-            } catch (Exception e) {
-                // TODO: handle exception
-                e.printStackTrace();
-                Log.d("error", "onActivityResult: " + e.toString());
-            }
-
-            result.put("uri", uri.toString());
+            result.put("uri", uriString);
             ContentResolver contentResolver = this.cordova.getActivity().getContentResolver();
-
             result.put("type", contentResolver.getType(uri));
+
             Cursor cursor = contentResolver.query(uri, null, null, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
                 int displayNameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
@@ -292,6 +278,22 @@ public class CordovaMediaPicker extends CordovaPlugin {
                     result.put("size", cursor.getInt(sizeIndex));
                 }
             }
+            
+            if (result.type.startsWith("image") {
+                try {
+                    InputStream in = contentResolver.openInputStream(uri);
+                    byte[] bytes = getBytes(in);
+                    Log.d("data", "onActivityResult: bytes size="+bytes.length);
+                    Log.d("data", "onActivityResult: Base64string="+Base64.encodeToString(bytes,Base64.DEFAULT));
+                    String ansValue = Base64.encodeToString(bytes,Base64.DEFAULT);
+                    result.put("base64", ansValue);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                    e.printStackTrace();
+                    Log.d("error", "onActivityResult: " + e.toString());
+                }
+            }
+            
             return result;
         } catch (JSONException err) {
             return "Error";

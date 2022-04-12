@@ -4,10 +4,11 @@ import Foundation
 
 @objc(CordovaMediaPicker) class CordovaMediaPicker : CDVPlugin {
     var commandCallback: String?
+    var blockCamera: Bool?
     enum MediaType {
-      case image
-      case media
-      case all
+        case image
+        case media
+        case all
     }
     struct Constants {
        static let camera = "Camera"
@@ -18,16 +19,20 @@ import Foundation
        static let documentTypes = ["com.microsoft.word.doc", "public.data", "org.openxmlformats.wordprocessingml.document", kUTTypePDF as String] //Use for specify type you need to pickup
     }
 
-    static let shared: MediaPicker = MediaPicker() //Singleton Pattern
+    static let shared: CordovaMediaPicker = CordovaMediaPicker() //Singleton Pattern
     fileprivate var currentViewController: UIViewController!
     var cameraPickerBlock: ((_ base64: String) -> Void)?
     var imagePickerBlock: ((_ image: URL) -> Void)?
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
 
-    func callPicker (options: [String: Any]) {
+    func callPicker (options: NSDictionary) {
         
-        var BlockCamera = options["blockcamera"] as? Boolean;
+        if (options["blockcamera"] != nil) {
+            self.blockCamera = (options["blockcamera"] as! Bool);
+        } else {
+            self.blockCamera = false;
+        }
 
         self.showActionSheet(viewController: self.viewController, type: .all)
         //Receive Image
@@ -130,10 +135,9 @@ import Foundation
     @objc(pick:)
     func pick(command: CDVInvokedUrlCommand) {
         self.commandCallback = command.callbackId
-        let type = command.arguments.first as! NSDictionary
-        let argType = type["type"] as! Int
+        let options = command.arguments.first as! NSDictionary
 
-        self.callPicker(type: argType)
+         self.callPicker(options: options)
     }
 
 
@@ -173,33 +177,40 @@ import Foundation
     }
 
     func showActionSheet(viewController: UIViewController, type: MediaType) {
-       currentViewController = viewController
-       let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-       let camera = UIAlertAction(title: Constants.camera, style: .default, handler: { (action) -> Void in
-          self.camera()
-       })
-       let gallery = UIAlertAction(title: Constants.gallery, style: .default, handler: { (action) -> Void in
-          self.photoLibrary()
-       })
-       let video = UIAlertAction(title: Constants.video, style: .default, handler: { (action) -> Void in
-          self.video()
-       })
+        currentViewController = viewController
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-       let file = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
-          self.file()
-       })
-       let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
-       actionSheet.addAction(camera)
-       actionSheet.addAction(gallery)
-       if type == .media {
-          actionSheet.addAction(video)
-       }
-       else if type == .all {
-          actionSheet.addAction(video)
-          actionSheet.addAction(file)
-       }
-       actionSheet.addAction(cancel)
-       viewController.present(actionSheet, animated: true, completion: nil)
+        if (!self.blockCamera) {
+            let camera = UIAlertAction(title: Constants.camera, style: .default, handler: { (action) -> Void in
+               self.camera()
+            })
+            actionSheet.addAction(camera)
+        }
+
+
+        let gallery = UIAlertAction(title: Constants.gallery, style: .default, handler: { (action) -> Void in
+            self.photoLibrary()
+        })
+        actionSheet.addAction(gallery)
+
+        let video = UIAlertAction(title: Constants.video, style: .default, handler: { (action) -> Void in
+            self.video()
+        })
+        let file = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+            self.file()
+        })
+        if type == .media {
+           actionSheet.addAction(video)
+        }
+        else if type == .all {
+           actionSheet.addAction(video)
+           actionSheet.addAction(file)
+        }
+
+        let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
+        actionSheet.addAction(cancel)
+
+        viewController.present(actionSheet, animated: true, completion: nil)
     }
     
     func detectMimeType (_ url: URL) -> String {
