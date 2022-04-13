@@ -205,6 +205,8 @@ public class CordovaMediaPicker extends CordovaPlugin {
         } else {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*");
+            String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf" };
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
             Intent chooser = Intent.createChooser(intent, "Select File");
@@ -326,7 +328,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
             }
             
             result.put("type", typeString);
-            if (typeString.startsWith("image")) {
+            if (typeString.startsWith("image") || typeString.startsWith("application")) {
                 try {
                     InputStream in = contentResolver.openInputStream(uri);
                     byte[] bytes = getBytes(in);
