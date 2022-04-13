@@ -84,21 +84,26 @@ public class CordovaMediaPicker extends CordovaPlugin {
         List<String> optionlist = new ArrayList<String>();
         
         int optionCount = 0;
-        if (!args.isNull(0) && args.get(0) == true) {
-            optionlist.add("Camera");
-            optionCount++;
-        }
-        if (!args.isNull(1) && args.get(1) == true) {
-            optionlist.add("Gallery");
-            optionCount++;
-        }
-        if (!args.isNull(2) && args.get(2) == true) {
-            optionlist.add("Video");
-            optionCount++;
-        }
-        if (!args.isNull(3) && args.get(3) == true) {
-            optionlist.add("File");
-            optionCount++;
+        try {
+            if (!args.isNull(0) && args.get(0) == Boolean.TRUE) {
+                optionlist.add("Camera");
+                optionCount++;
+            }
+            if (!args.isNull(1) && args.get(1) == Boolean.TRUE) {
+                optionlist.add("Gallery");
+                optionCount++;
+            }
+            if (!args.isNull(2) && args.get(2) == Boolean.TRUE) {
+                optionlist.add("Video");
+                optionCount++;
+            }
+            if (!args.isNull(3) && args.get(3) == Boolean.TRUE) {
+                optionlist.add("File");
+                optionCount++;
+            }
+        } catch (JSONException e) {
+            // do nothing, this results in all options being active
+            // e.printStackTrace();
         }
         if (optionCount == 0) {
             optionlist.add("Camera");
@@ -107,18 +112,19 @@ public class CordovaMediaPicker extends CordovaPlugin {
             optionlist.add("File");
             optionCount = 4;
         }
+        if (optionCount > 1) {
+            optionlist.add("Cancel");
+        }
         
         String[] options = optionlist.toArray(new String[0]);
 
         if (optionCount == 1) {
              handleOption(options[0]);
         } else {
-            options.append("Cancel");
             builder.setItems(options, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    var option = options[which];
-                    handleOption(option);
+                    handleOption(options[which]);
                 }
             });
             // create and show the alert dialog
@@ -295,7 +301,9 @@ public class CordovaMediaPicker extends CordovaPlugin {
 
             result.put("uri", uriString);
             ContentResolver contentResolver = this.cordova.getActivity().getContentResolver();
-            result.put("type", contentResolver.getType(uri));
+
+            String typeString = contentResolver.getType(uri);
+            
 
             Cursor cursor = contentResolver.query(uri, null, null, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
@@ -307,7 +315,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     int mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE);
                     if (!cursor.isNull(mimeIndex)) {
-                        result.put("type", cursor.getString(mimeIndex));
+                        typeString = cursor.getString(mimeIndex);
                     }
                 }
 
@@ -317,7 +325,8 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 }
             }
             
-            if (result.type.startsWith("image")) {
+            result.put("type", typeString);
+            if (typeString.startsWith("image")) {
                 try {
                     InputStream in = contentResolver.openInputStream(uri);
                     byte[] bytes = getBytes(in);
