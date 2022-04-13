@@ -9,18 +9,19 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
     options = options || {};
     var getValue = argscheck.getValue;
 
-    var picker_options = {};
+    var picker_options = [false, false, false, false];
+    
     if ("all" in options && options.all) {
-        picker_options.all = true;
+        picker_options = [true, true, true, true];
     } else {
-        picker_options.camera = getValue(options.camera, false);
-        picker_options.gallery = getValue(options.gallery, false);
-        picker_options.video = getValue(options.video, false);
-        picker_options.file = getValue(options.file, false);  
+        picker_options[0] = options.camera?true:false;
+        picker_options[1] = options.gallery?true:false;
+        picker_options[2] = options.video?true:false;
+        picker_options[3] = options.file?true:false; 
     }
     if (!cordovaPluginCameraInstalled) {
         //only do this on android
-        picker_options.camera = false;
+        picker_options[0] = false;
     }
     
     var cameraCallback = function(result) {

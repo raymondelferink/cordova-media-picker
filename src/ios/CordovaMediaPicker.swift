@@ -31,35 +31,27 @@ import Foundation
 
     func callPicker (options: NSArray) {
         self.allowedOptions = 0;
+        self.allowCamera = false;
+        self.allowGallery = false;
+        self.allowVideo = false;
+        self.allowFile = false;
         
         if (options[0] != nil) {
-            // set none, so all will be set automatically
-        } else { 
-            if (options[1] != nil) {
-                self.allowCamera = (options[1] as! Bool);
-                if (self.allowCamera) {self.allowedOptions+=1}
-            } else {
-                self.allowCamera = false;
-            }
-            if (options[2] != nil) {
-                self.allowGallery = (options[2] as! Bool);
-                if (self.allowGallery) {self.allowedOptions+=1}
-            } else {
-                self.allowGallery = false;
-            }
-            if (options[3] != nil) {
-                self.allowVideo = (options[3] as! Bool);
-                if (self.allowVideo) {self.allowedOptions+=1}
-            } else {
-                self.allowVideo = false;
-            }
-            if (options[4] != nil) {
-                self.allowFile = (options[4] as! Bool);
-                if (self.allowFile) {self.allowedOptions+=1}
-            } else {
-                self.allowFile = false;
-            }
-        }
+            self.allowCamera = (options[0] as! Bool);
+            if (self.allowCamera) {self.allowedOptions+=1}
+        } 
+        if (options[1] != nil) {
+            self.allowGallery = (options[1] as! Bool);
+            if (self.allowGallery) {self.allowedOptions+=1}
+        } 
+        if (options[2] != nil) {
+            self.allowVideo = (options[2] as! Bool);
+            if (self.allowVideo) {self.allowedOptions+=1}
+        } 
+        if (options[3] != nil) {
+            self.allowFile = (options[3] as! Bool);
+            if (self.allowFile) {self.allowedOptions+=1}
+        } 
 
         if (self.allowedOptions == 0) {
             self.allowCamera = true;

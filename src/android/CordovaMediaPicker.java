@@ -84,25 +84,21 @@ public class CordovaMediaPicker extends CordovaPlugin {
         List<String> optionlist = new ArrayList<String>();
         
         int optionCount = 0;
-        if (!args.isNull(0) ) {
-            // do nothing, all options will be set
-        } else {
-            if (!args.isNull(1) && args.get(1) == 1) {
-                optionlist.add("Camera");
-                optionCount++;
-            }
-            if (!args.isNull(2) && args.get(2) == 1) {
-                optionlist.add("Gallery");
-                optionCount++;
-            }
-            if (!args.isNull(3) && args.get(3) == 1) {
-                optionlist.add("Video");
-                optionCount++;
-            }
-            if (!args.isNull(4) && args.get(4) == 1) {
-                optionlist.add("File");
-                optionCount++;
-            }
+        if (!args.isNull(0) && args.get(0) == true) {
+            optionlist.add("Camera");
+            optionCount++;
+        }
+        if (!args.isNull(1) && args.get(1) == true) {
+            optionlist.add("Gallery");
+            optionCount++;
+        }
+        if (!args.isNull(2) && args.get(2) == true) {
+            optionlist.add("Video");
+            optionCount++;
+        }
+        if (!args.isNull(3) && args.get(3) == true) {
+            optionlist.add("File");
+            optionCount++;
         }
         if (optionCount == 0) {
             optionlist.add("Camera");
