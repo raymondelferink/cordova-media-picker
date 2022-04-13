@@ -231,7 +231,13 @@ import Foundation
 
     func showActionSheet(viewController: UIViewController) {
         currentViewController = viewController
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        // fix for ipad from: https://stackoverflow.com/a/60403127
+        var alertStyle = UIAlertController.Style.actionSheet
+        if (UIDevice.current.userInterfaceIdiom == .pad) {
+            alertStyle = UIAlertController.Style.alert
+        }
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: alertStyle)
 
         if (self.allowCamera) {
             let camera = UIAlertAction(title: Constants.camera, style: .default, handler: { (action) -> Void in
@@ -263,6 +269,14 @@ import Foundation
 
         let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
         actionSheet.addAction(cancel)
+        
+        // fix for ipad from: https://stackoverflow.com/a/54932223
+    //    actionSheet.popoverPresentationController?.sourceView = currentViewController
+    //    actionSheet.popoverPresentationController?.sourceRect = currentViewController.bounds
+    //    // or maybe: actionSheet.popoverPresentationController?.sourceRect = CGRect(x: currentViewController.bounds.midX, y: currentViewController.bounds.midY, width: 0, height: 0)
+    //    actionSheet.popoverPresentationController?.permittedArrowDirections = []
+
+        
 
         viewController.present(actionSheet, animated: true, completion: nil)
     }
