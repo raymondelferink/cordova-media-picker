@@ -97,27 +97,28 @@ public class CordovaMediaPicker extends CordovaPlugin {
         int optionCount = 0;
 
         try {
-            if (args.getInt(0) == 1) {
+            JSONArray argoptions = args.getJSONArray(0);
+            if (argoptions.getInt(0) == 1) {
                 optionlist.add("Camera");
                 optionCount++;
             }
-            if (args.getInt(1) == 1) {
+            if (argoptions.getInt(1) == 1) {
                 optionlist.add("Gallery");
                 optionCount++;
             }
-            if (args.getInt(2) == 1) {
+            if (argoptions.getInt(2) == 1) {
                 optionlist.add("Video");
                 optionCount++;
             }
-            if (args.getInt(3) == 1) {
+            if (argoptions.getInt(3) == 1) {
                 optionlist.add("File");
                 optionCount++;
             }
-            if (args.getInt(4) == 1) {
+            if (argoptions.getInt(4) == 1) {
                 optionlist.add("Audio Recorder");
                 optionCount++;
             }
-            if (args.getInt(5) == 1) {
+            if (argoptions.getInt(5) == 1) {
                 optionlist.add("Video Recorder");
                 optionCount++;
             }
