@@ -1,6 +1,7 @@
 import UIKit
 import MobileCoreServices
 import Foundation
+import AVFoundation
 
 @objc(CordovaMediaPicker) class CordovaMediaPicker : CDVPlugin {
     var commandCallback: String?
@@ -9,6 +10,8 @@ import Foundation
     var allowGallery = false
     var allowVideo = false
     var allowFile = false
+    var allowAudioRecorder = false
+    var allowVideoRecorder = false
     var allowedOptions = 0;
     
     var lastInfo: [String : Any]?
@@ -18,6 +21,8 @@ import Foundation
        static let gallery = "Gallery"
        static let video = "Video"
        static let file = "File"
+       static let audiorecorder = "Audio Recorder"
+       static let videorecorder = "Video Recorder"
        static let cancel = "Cancel"
        static let documentTypes = ["com.microsoft.word.doc", "public.data", "org.openxmlformats.wordprocessingml.document", kUTTypePDF as String] //Use for specify type you need to pickup
     }
@@ -28,6 +33,7 @@ import Foundation
     var imagePickerBlock: ((_ image: URL) -> Void)?
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
+    var audioRecorderPickerBlock: ((_ url: URL) -> Void)?
 
     func callPicker (options: NSArray) {
         self.allowedOptions = 0;
@@ -35,22 +41,32 @@ import Foundation
         self.allowGallery = false;
         self.allowVideo = false;
         self.allowFile = false;
+        self.allowAudioRecorder = false;
+        self.allowVideoRecorder = false;
         
         if (options[0] != nil) {
-            self.allowCamera = (options[0] as! Bool);
+            self.allowCamera = (options[0] as! Int == 1);
             if (self.allowCamera) {self.allowedOptions+=1}
         } 
         if (options[1] != nil) {
-            self.allowGallery = (options[1] as! Bool);
+            self.allowGallery = (options[1] as! Int == 1);
             if (self.allowGallery) {self.allowedOptions+=1}
         } 
         if (options[2] != nil) {
-            self.allowVideo = (options[2] as! Bool);
+            self.allowVideo = (options[2] as! Int == 1);
             if (self.allowVideo) {self.allowedOptions+=1}
         } 
         if (options[3] != nil) {
-            self.allowFile = (options[3] as! Bool);
+            self.allowFile = (options[3] as! Int == 1);
             if (self.allowFile) {self.allowedOptions+=1}
+        } 
+        if (options[4] != nil) {
+            self.allowAudioRecorder = false // (options[3] as! Int == 1);
+            if (self.allowAudioRecorder) {self.allowedOptions+=1}
+        } 
+        if (options[5] != nil) {
+            self.allowVideoRecorder = (options[3] as! Int == 1);
+            if (self.allowVideoRecorder) {self.allowedOptions+=1}
         } 
 
         if (self.allowedOptions == 0) {
@@ -58,6 +74,8 @@ import Foundation
             self.allowGallery = true;
             self.allowVideo = true;
             self.allowFile = true;
+            self.allowAudioRecorder = false;
+            self.allowVideoRecorder = true;`
             self.allowedOptions = 4
         }
 
@@ -181,6 +199,10 @@ import Foundation
             self.video()
         } else if (self.allowFile) {
             self.file()
+        } else if (self.allowAudioRecorder) {
+            self.sendError("No options allowed") //todo call function
+        } else if (self.allowvideoRecorder) {
+            self.sendError("No options allowed") //todo call function
         } else {
             self.sendError("No options allowed")
         }
@@ -229,6 +251,24 @@ import Foundation
        currentViewController.present(importMenuViewController, animated: true, completion: nil)
     }
 
+    fileprivate func audiorecorder() {
+       //if UIImagePickerController.isSourceTypeAvailable(.camera) {
+       //  let pickerController = UIImagePickerController()
+        //  pickerController.delegate = self;
+        //  pickerController.sourceType = .camera
+        //  currentViewController.present(pickerController, animated: true,   completion: nil)
+      // }
+    }
+
+    fileprivate func videorecorder() {
+       if UIImagePickerController.isSourceTypeAvailable(.video) {
+          let pickerController = UIImagePickerController()
+          pickerController.delegate = self;
+          pickerController.sourceType = .video
+          currentViewController.present(pickerController, animated: true,   completion: nil)
+       }
+    }
+
     func showActionSheet(viewController: UIViewController) {
         currentViewController = viewController
         
@@ -265,6 +305,20 @@ import Foundation
                 self.file()
             })
             actionSheet.addAction(file)
+        }
+
+        if (self.allowAudioRecorder) {
+            let audiorecorder = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+                self.audiorecorder()
+            })
+            actionSheet.addAction(audiorecorder)
+        }
+
+        if (self.allowVideoRecorder) {
+            let videorecorder = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+                self.videorecorder()
+            })
+            actionSheet.addAction(videorecorder)
         }
 
         let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
