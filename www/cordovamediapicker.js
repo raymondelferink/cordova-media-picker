@@ -40,8 +40,9 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
                 duration: 60
             };
             exec(audioCallback, errorCallback, 'Capture', 'captureAudio', [args]);
+        } else {
+            successCallback(result);
         }
-        successCallback(result);
     };
     
     exec(catchCallback, errorCallback, 'CordovaMediaPicker', 'pick', [picker_options]);
