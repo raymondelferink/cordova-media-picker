@@ -63,6 +63,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
     
     private int currentAction;              // Current action
     private String applicationId;
+    private String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf" };
 
     @Override
     public boolean execute(String action, JSONArray args,
@@ -205,8 +206,8 @@ public class CordovaMediaPicker extends CordovaPlugin {
         } else {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("*/*");
-            String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf" };
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
+            
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, this.mimetypes);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
             Intent chooser = Intent.createChooser(intent, "Select File");
