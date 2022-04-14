@@ -28,9 +28,10 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
     }
     
     var audioCallback = function(result) {
-        result.uri = result.localURL;
-        var results = [result];
-        successCallback(results);
+        if (result && result[0] && result[0].localURL) {
+            result[0].uri = result[0].localURL;
+        }
+        successCallback(result);
     };
     
     var catchCallback = function(result) {
