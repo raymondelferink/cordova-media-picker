@@ -33,7 +33,6 @@ import AVFoundation
     var imagePickerBlock: ((_ image: URL) -> Void)?
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
-    var audioRecorderPickerBlock: ((_ url: URL) -> Void)?
 
     func callPicker (options: NSArray) {
         self.allowedOptions = 0;
@@ -44,39 +43,28 @@ import AVFoundation
         self.allowAudioRecorder = false;
         self.allowVideoRecorder = false;
         
-        if (options[0] != nil) {
-            self.allowCamera = (options[0] as! Int == 1);
-            if (self.allowCamera) {self.allowedOptions+=1}
-        } 
-        if (options[1] != nil) {
-            self.allowGallery = (options[1] as! Int == 1);
-            if (self.allowGallery) {self.allowedOptions+=1}
-        } 
-        if (options[2] != nil) {
-            self.allowVideo = (options[2] as! Int == 1);
-            if (self.allowVideo) {self.allowedOptions+=1}
-        } 
-        if (options[3] != nil) {
-            self.allowFile = (options[3] as! Int == 1);
-            if (self.allowFile) {self.allowedOptions+=1}
-        } 
-        if (options[4] != nil) {
-            self.allowAudioRecorder = false // (options[3] as! Int == 1);
-            if (self.allowAudioRecorder) {self.allowedOptions+=1}
-        } 
-        if (options[5] != nil) {
-            self.allowVideoRecorder = (options[3] as! Int == 1);
-            if (self.allowVideoRecorder) {self.allowedOptions+=1}
-        } 
-
+        
+        self.allowCamera = (options[0] as! Int == 1);
+        if (self.allowCamera) {self.allowedOptions+=1}
+        self.allowGallery = (options[1] as! Int == 1);
+        if (self.allowGallery) {self.allowedOptions+=1}
+        self.allowVideo = (options[2] as! Int == 1);
+        if (self.allowVideo) {self.allowedOptions+=1}
+        self.allowFile = (options[3] as! Int == 1);
+        if (self.allowFile) {self.allowedOptions+=1}
+        self.allowAudioRecorder = (options[4] as! Int == 1);
+        if (self.allowAudioRecorder) {self.allowedOptions+=1}
+        self.allowVideoRecorder = (options[5] as! Int == 1);
+        if (self.allowVideoRecorder) {self.allowedOptions+=1}
+        
         if (self.allowedOptions == 0) {
             self.allowCamera = true;
             self.allowGallery = true;
             self.allowVideo = true;
             self.allowFile = true;
-            self.allowAudioRecorder = false;
-            self.allowVideoRecorder = true;`
-            self.allowedOptions = 4
+            self.allowAudioRecorder = true;
+            self.allowVideoRecorder = true;
+            self.allowedOptions = 6
         }
 
         //Receive Image
@@ -200,9 +188,9 @@ import AVFoundation
         } else if (self.allowFile) {
             self.file()
         } else if (self.allowAudioRecorder) {
-            self.sendError("No options allowed") //todo call function
-        } else if (self.allowvideoRecorder) {
-            self.sendError("No options allowed") //todo call function
+            self.audiorecorder()
+        } else if (self.allowVideoRecorder) {
+            self.videorecorder()
         } else {
             self.sendError("No options allowed")
         }
@@ -252,21 +240,19 @@ import AVFoundation
     }
 
     fileprivate func audiorecorder() {
-       //if UIImagePickerController.isSourceTypeAvailable(.camera) {
-       //  let pickerController = UIImagePickerController()
-        //  pickerController.delegate = self;
-        //  pickerController.sourceType = .camera
-        //  currentViewController.present(pickerController, animated: true,   completion: nil)
-      // }
+        // use external audiorecorder
+        self.send("OPEN_AUDIORECORDER")
     }
 
     fileprivate func videorecorder() {
-       if UIImagePickerController.isSourceTypeAvailable(.video) {
-          let pickerController = UIImagePickerController()
-          pickerController.delegate = self;
-          pickerController.sourceType = .video
-          currentViewController.present(pickerController, animated: true,   completion: nil)
-       }
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            let pickerController = UIImagePickerController()
+            pickerController.delegate = self;
+            pickerController.sourceType = .camera;
+            pickerController.cameraCaptureMode = .video;
+            pickerController.mediaTypes = [kUTTypeMovie as String]
+            currentViewController.present(pickerController, animated: true,   completion: nil)
+        }
     }
 
     func showActionSheet(viewController: UIViewController) {
@@ -308,14 +294,14 @@ import AVFoundation
         }
 
         if (self.allowAudioRecorder) {
-            let audiorecorder = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+            let audiorecorder = UIAlertAction(title: Constants.audiorecorder, style: .default, handler: { (action) -> Void in
                 self.audiorecorder()
             })
             actionSheet.addAction(audiorecorder)
         }
 
         if (self.allowVideoRecorder) {
-            let videorecorder = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
+            let videorecorder = UIAlertAction(title: Constants.videorecorder, style: .default, handler: { (action) -> Void in
                 self.videorecorder()
             })
             actionSheet.addAction(videorecorder)
