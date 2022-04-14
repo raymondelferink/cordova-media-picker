@@ -57,9 +57,19 @@ public class CordovaMediaPicker extends CordovaPlugin {
     public static final int CHOOSE_FILE_SEC = 1;
     public static final int CHOOSE_IMAGE_SEC = 2;
     public static final int CHOOSE_VIDEO_SEC = 3;
+    public static final int CHOOSE_AUDIORECORDER_SEC = 4;
+    public static final int CHOOSE_CAMERA_SEC = 5;
+    public static final int CHOOSE_VIDEORECORDER_SEC = 6;
     public static final int ACTION_FILE = 1;
     public static final int ACTION_IMAGE = 2;
     public static final int ACTION_VIDEO = 3;
+    public static final int ACTION_AUDIORECORDER = 4;
+    public static final int ACTION_CAMERA = 5;
+    public static final int ACTION_VIDEORECORDER = 6;
+
+    public static final long AUDIO_MAX_BYTES = (long) 1024L * 1024L; // max 1MB, roughly 1 minute
+    public static final long VIDEO_MAX_DURATION = 30; // max 30 seconds
+    public static final long VIDEO_QUALITY = 1; // video quality between 0 and 1
     
     private int currentAction;              // Current action
     private String applicationId;
@@ -85,21 +95,30 @@ public class CordovaMediaPicker extends CordovaPlugin {
         List<String> optionlist = new ArrayList<String>();
         
         int optionCount = 0;
+
         try {
-            if (!args.isNull(0) && args.get(0) == Boolean.TRUE) {
+            if (args.getInt(0) == 1) {
                 optionlist.add("Camera");
                 optionCount++;
             }
-            if (!args.isNull(1) && args.get(1) == Boolean.TRUE) {
+            if (args.getInt(1) == 1) {
                 optionlist.add("Gallery");
                 optionCount++;
             }
-            if (!args.isNull(2) && args.get(2) == Boolean.TRUE) {
+            if (args.getInt(2) == 1) {
                 optionlist.add("Video");
                 optionCount++;
             }
-            if (!args.isNull(3) && args.get(3) == Boolean.TRUE) {
+            if (args.getInt(3) == 1) {
                 optionlist.add("File");
+                optionCount++;
+            }
+            if (args.getInt(4) == 1) {
+                optionlist.add("Audio Recorder");
+                optionCount++;
+            }
+            if (args.getInt(5) == 1) {
+                optionlist.add("Video Recorder");
                 optionCount++;
             }
         } catch (JSONException e) {
@@ -111,7 +130,9 @@ public class CordovaMediaPicker extends CordovaPlugin {
             optionlist.add("Gallery");
             optionlist.add("Video");
             optionlist.add("File");
-            optionCount = 4;
+            optionlist.add("Audio Recorder");
+            optionlist.add("Video Recorder");
+            optionCount = 6;
         }
         if (optionCount > 1) {
             optionlist.add("Cancel");
@@ -141,32 +162,8 @@ public class CordovaMediaPicker extends CordovaPlugin {
     public void handleOption (String option) {
         switch (option) {
             case "Camera":
-                callbackContext.success("OPEN_CAMERA");
-                JSONArray data = new JSONArray();
-                /*
-                data.put(50);   //var quality = getValue(options.quality, 50);
-                data.put(0);   //var destinationType = getValue(options.destinationType, Camera.DestinationType.FILE_URI);
-                data.put(1);   //var sourceType = getValue(options.sourceType, Camera.PictureSourceType.CAMERA);
-                data.put(-1);   //var targetWidth = getValue(options.targetWidth, -1);
-                data.put(-1);   //var targetHeight = getValue(options.targetHeight, -1);
-                data.put(0);   //var encodingType = getValue(options.encodingType, Camera.EncodingType.JPEG);
-                data.put(0);   //var mediaType = getValue(options.mediaType, Camera.MediaType.PICTURE);
-                data.put(false);   //var allowEdit = !!options.allowEdit;
-                data.put(true);   //var correctOrientation = !!options.correctOrientation;
-                data.put(false);   //var saveToPhotoAlbum = !!options.saveToPhotoAlbum;
-                data.put(null);   //var popoverOptions = getValue(options.popoverOptions, null);
-                data.put(0);   //var cameraDirection = getValue(options.cameraDirection, Camera.Direction.BACK);
-                try {
-                    CameraLauncher Camera = new CameraLauncher();
-                    CallbackContext newCallbackContext = callbackContext;
-
-                    Camera.execute("takePicture", data, newCallbackContext);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.d("error", "onActivityResult: " + e.toString());
-                    callbackContext.error("Call CameraLauncher failed");
-                }
-                */
+                // callbackContext.success("OPEN_CAMERA");
+                chooseCamera(callbackContext);
                 break;
             case "Gallery": // Gallery
                 chooseImage(callbackContext);
@@ -177,10 +174,28 @@ public class CordovaMediaPicker extends CordovaPlugin {
             case "File": // File
                 chooseFile(callbackContext);
                 break;
+            case "Audio Recorder": // Audio Recorder
+                chooseAudioRecorder(callbackContext);
+                break;
+            case "Video Recorder": // Video Recorder
+                chooseVideoRecorder(callbackContext);
+                break;
             case "Cancel": // Cancel
                 callbackContext.error("Action cancelled");
                 break;
         }
+    }
+
+    public void chooseCamera (CallbackContext callbackContext) {
+        this.currentAction = ACTION_CAMERA;
+
+        if(!PermissionHelper.hasPermission(this, Manifest.permission.CAMERA)) {
+            PermissionHelper.requestPermission(this, CHOOSE_CAMERA_SEC, Manifest.permission.CAMERA);
+        } else {
+            Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            cordova.startActivityForResult(this, intent, REQUEST_CODE);
+        }
+
     }
 
     public void chooseImage (CallbackContext callbackContext) {
@@ -231,6 +246,33 @@ public class CordovaMediaPicker extends CordovaPlugin {
 
     }
 
+    public void chooseAudioRecorder (CallbackContext callbackContext) {
+        this.currentAction = ACTION_AUDIORECORDER;
+
+        if(!PermissionHelper.hasPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            PermissionHelper.requestPermission(this, CHOOSE_AUDIORECORDER_SEC, Manifest.permission.READ_EXTERNAL_STORAGE);
+        } else {
+            Intent intent = new Intent(android.provider.MediaStore.Audio.Media.RECORD_SOUND_ACTION);
+            intent.putExtra("android.provider.MediaStore.extra.MAX_BYTES", AUDIO_MAX_BYTES);
+            cordova.startActivityForResult(this, intent, REQUEST_CODE);
+        }
+
+    }
+
+    public void chooseVideoRecorder (CallbackContext callbackContext) {
+        this.currentAction = ACTION_VIDEORECORDER;
+
+        if(!PermissionHelper.hasPermission(this, Manifest.permission.CAMERA)) {
+            PermissionHelper.requestPermission(this, CHOOSE_VIDEORECORDER_SEC, Manifest.permission.CAMERA);
+        } else {
+            Intent intent = new Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE);
+            intent.putExtra("android.intent.extra.durationLimit", VIDEO_MAX_DURATION);
+            intent.putExtra("android.intent.extra.videoQuality", VIDEO_QUALITY);
+            cordova.startActivityForResult(this, intent, REQUEST_CODE);
+        }
+
+    }
+
     public void onRequestPermissionResult(int requestCode, String[] permissions,
                                           int[] grantResults) {
         for (int r : grantResults) {
@@ -249,6 +291,12 @@ public class CordovaMediaPicker extends CordovaPlugin {
             case CHOOSE_VIDEO_SEC:
                 chooseVideo(this.callbackContext);
                 break;
+            case CHOOSE_AUDIORECORDER_SEC:
+                chooseAudioRecorder(this.callbackContext);
+                break;
+            case CHOOSE_CAMERA_SEC:
+                chooseCamera(this.callbackContext);
+                break;
         }
     }
 
@@ -262,6 +310,9 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 case ACTION_IMAGE:
                 case ACTION_FILE:
                 case ACTION_VIDEO:
+                case ACTION_AUDIORECORDER:
+                case ACTION_CAMERA:
+                case ACTION_VIDEORECORDER:
                     handleFile(data);
                     break;
                 default:

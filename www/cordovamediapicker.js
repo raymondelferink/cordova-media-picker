@@ -1,28 +1,31 @@
 var exec = require('cordova/exec');
-var argscheck = require('cordova/argscheck');
 
 function CordovaMediaPicker() {}
 
 CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCallback) {
     
-    var cordovaPluginCameraInstalled = (navigator.camera && navigator.camera.getPicture)?true:false;
     options = options || {};
-    var getValue = argscheck.getValue;
 
-    var picker_options = [false, false, false, false];
+    var picker_options = [0, 0, 0, 0, 0, 0];
     
     if ("all" in options && options.all) {
-        picker_options = [true, true, true, true];
+        picker_options = [1, 1, 1, 1, 1, 1];
     } else {
-        picker_options[0] = options.camera?true:false;
-        picker_options[1] = options.gallery?true:false;
-        picker_options[2] = options.video?true:false;
-        picker_options[3] = options.file?true:false; 
+        picker_options = [
+            options.camera?1:0,
+            options.gallery?1:0,
+            options.video?1:0,
+            options.file?1:0,
+            options.audiorecorder?1:0,
+            options.videorecorder?1:0 
+        ];
     }
-    if (!cordovaPluginCameraInstalled) {
-        //only do this on android
-        picker_options[0] = false;
-    }
+    
+//    var cordovaPluginCameraInstalled = (navigator.camera && navigator.camera.getPicture)?true:false;
+//    if (!cordovaPluginCameraInstalled) {
+//        //only do this on android
+//        picker_options[0] = 0;
+//    }
     
     var cameraCallback = function(result) {
         var results = [{
