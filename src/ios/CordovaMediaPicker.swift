@@ -249,8 +249,8 @@ import AVFoundation
             let pickerController = UIImagePickerController()
             pickerController.delegate = self;
             pickerController.sourceType = .camera;
-            pickerController.cameraCaptureMode = .video;
             pickerController.mediaTypes = [kUTTypeMovie as String]
+            pickerController.cameraCaptureMode = .video;
             currentViewController.present(pickerController, animated: true,   completion: nil)
         }
     }
