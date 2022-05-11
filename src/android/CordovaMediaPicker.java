@@ -97,7 +97,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
         int optionCount = 0;
         int mimeCount = 0;
         try {
-            JSONObject argoptions = args.getJSONArray(0);
+            JSONObject argoptions = args.getJSONObject(0);
             if (argoptions.has("camera") && argoptions.getInt("camera") == 1) {
                 optionlist.add("Camera");
                 optionCount++;
@@ -126,19 +126,19 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 JSONObject filetypeoptions = argoptions.getJSONObject("filetypes");
                 List<String> mimelist = new ArrayList<String>();
                 if (filetypeoptions.has("photo") && filetypeoptions.getInt("photo") == 1) {
-                    mimelist.add = "image/*";
+                    mimelist.add("image/*");
                     mimeCount++;
                 }
                 if (filetypeoptions.has("video") && filetypeoptions.getInt("video") == 1) {
-                    mimelist.add = "video/*";
+                    mimelist.add("video/*");
                     mimeCount++;
                 }
                 if (filetypeoptions.has("audio") && filetypeoptions.getInt("audio") == 1) {
-                    mimelist.add = "audio/*";
+                    mimelist.add("audio/*");
                     mimeCount++;
                 }
                 if (filetypeoptions.has("file") && filetypeoptions.getInt("file") == 1) {
-                    mimelist.add = "application/pdf";
+                    mimelist.add("application/pdf");
                     mimeCount++;
                 }
                 if (mimeCount > 0) {
@@ -244,7 +244,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
             PermissionHelper.requestPermission(this, CHOOSE_FILE_SEC, Manifest.permission.READ_EXTERNAL_STORAGE);
         } else {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("*/*");
+            intent.setType(this.mimetypes[0]);
             
             intent.putExtra(Intent.EXTRA_MIME_TYPES, this.mimetypes);
             intent.addCategory(Intent.CATEGORY_OPENABLE);
