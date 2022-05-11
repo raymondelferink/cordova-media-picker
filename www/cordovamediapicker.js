@@ -3,28 +3,29 @@ var exec = require('cordova/exec');
 function CordovaMediaPicker() {}
 
 CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCallback) {
-    
     options = options || {};
 
-    var picker_options = [0, 0, 0, 0, 0, 0];
+    var default_filetypes = {
+        photo: 1,
+        video: 1,
+        audio: 1,
+        file: 1
+    };
+
+    var pick_options = {};
+    pick_options.camera = (options.camera || options.all)?1:0;
+    pick_options.gallery = (options.gallery || options.all)?1:0;
+    pick_options.video = (options.video || options.all)?1:0;
+    pick_options.file = (options.file || options.all)?1:0;
+    pick_options.audiorecorder = (options.audiorecorder || options.all)?1:0;
+    pick_options.videorecorder = (options.camera || options.all)?1:0;
+    pick_options.filetypes = options.file_types || default_filetypes;
     
-    if ("all" in options && options.all) {
-        picker_options = [1, 1, 1, 1, 1, 1];
-    } else {
-        picker_options = [
-            options.camera?1:0,
-            options.gallery?1:0,
-            options.video?1:0,
-            options.file?1:0,
-            options.audiorecorder?1:0,
-            options.videorecorder?1:0 
-        ];
-    }
     var ios = options.ios?true:false;
     var cordovaPluginAudioInstalled = (navigator.device && navigator.device.capture && navigator.device.capture.captureAudio)?true:false;
     if (ios && !cordovaPluginAudioInstalled) {
-        //only do this on android
-        picker_options[4] = 0;
+        //only do this on ios
+        pick_options.audiorecorder = 0;
     }
     
     var audioCallback = function(result) {
@@ -46,7 +47,7 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
         }
     };
     
-    exec(catchCallback, errorCallback, 'CordovaMediaPicker', 'pick', [picker_options]);
+    exec(catchCallback, errorCallback, 'CordovaMediaPicker', 'pick', [pick_options]);
     
 };
 

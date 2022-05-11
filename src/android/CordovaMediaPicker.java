@@ -95,32 +95,55 @@ public class CordovaMediaPicker extends CordovaPlugin {
         List<String> optionlist = new ArrayList<String>();
         
         int optionCount = 0;
-
+        int mimeCount = 0;
         try {
-            JSONArray argoptions = args.getJSONArray(0);
-            if (argoptions.getInt(0) == 1) {
+            JSONObject argoptions = args.getJSONArray(0);
+            if (argoptions.has("camera") && argoptions.getInt("camera") == 1) {
                 optionlist.add("Camera");
                 optionCount++;
             }
-            if (argoptions.getInt(1) == 1) {
+            if (argoptions.has("gallery") && argoptions.getInt("gallery") == 1) {
                 optionlist.add("Gallery");
                 optionCount++;
             }
-            if (argoptions.getInt(2) == 1) {
+            if (argoptions.has("video") && argoptions.getInt("video") == 1) {
                 optionlist.add("Video");
                 optionCount++;
             }
-            if (argoptions.getInt(3) == 1) {
+            if (argoptions.has("file") && argoptions.getInt("file") == 1) {
                 optionlist.add("File");
                 optionCount++;
             }
-            if (argoptions.getInt(4) == 1) {
+            if (argoptions.has("audiorecorder") && argoptions.getInt("audiorecorder") == 1) {
                 optionlist.add("Audio Recorder");
                 optionCount++;
             }
-            if (argoptions.getInt(5) == 1) {
+            if (argoptions.has("videorecorder") && argoptions.getInt("videorecorder") == 1) {
                 optionlist.add("Video Recorder");
                 optionCount++;
+            }
+            if (argoptions.has("filetypes")) {
+                JSONObject filetypeoptions = argoptions.getJSONObject("filetypes");
+                List<String> mimelist = new ArrayList<String>();
+                if (filetypeoptions.has("photo") && filetypeoptions.getInt("photo") == 1) {
+                    mimelist.add = "image/*";
+                    mimeCount++;
+                }
+                if (filetypeoptions.has("video") && filetypeoptions.getInt("video") == 1) {
+                    mimelist.add = "video/*";
+                    mimeCount++;
+                }
+                if (filetypeoptions.has("audio") && filetypeoptions.getInt("audio") == 1) {
+                    mimelist.add = "audio/*";
+                    mimeCount++;
+                }
+                if (filetypeoptions.has("file") && filetypeoptions.getInt("file") == 1) {
+                    mimelist.add = "application/pdf";
+                    mimeCount++;
+                }
+                if (mimeCount > 0) {
+                    this.mimetypes = mimelist.toArray(new String[0]);
+                }
             }
         } catch (JSONException e) {
             // do nothing, this results in all options being active

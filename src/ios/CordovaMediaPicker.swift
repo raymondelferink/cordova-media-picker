@@ -15,16 +15,26 @@ import AVFoundation
     var allowedOptions = 0;
     
     var lastInfo: [String : Any]?
+    var allowedDocumentTypes: [String : Any]?
 
     struct Constants {
-       static let camera = "Camera"
-       static let gallery = "Gallery"
-       static let video = "Video"
-       static let file = "File"
-       static let audiorecorder = "Audio Recorder"
-       static let videorecorder = "Video Recorder"
-       static let cancel = "Cancel"
-       static let documentTypes = ["com.microsoft.word.doc", "public.data", "org.openxmlformats.wordprocessingml.document", kUTTypePDF as String] //Use for specify type you need to pickup
+        static let camera = "Camera"
+        static let gallery = "Gallery"
+        static let video = "Video"
+        static let file = "File"
+        static let audiorecorder = "Audio Recorder"
+        static let videorecorder = "Video Recorder"
+        static let cancel = "Cancel"
+        //static let documentTypes = ["com.microsoft.word.doc", "public.data", "org.openxmlformats.wordprocessingml.document", kUTTypePDF as String] //Use for specify type you need to pickup
+        static let documentTypes = [
+            kUTTypeImage as String, 
+            kUTTypeMovie as String, 
+            kUTTypeVideo as String, 
+            kUTTypeMP3 as String, 
+            kUTTypeAudio as String,
+            kUTTypePDF as String, 
+            kUTTypePlainText as String
+        ]
     }
 
     static let shared: CordovaMediaPicker = CordovaMediaPicker() //Singleton Pattern
@@ -40,21 +50,21 @@ import AVFoundation
         self.allowGallery = false;
         self.allowVideo = false;
         self.allowFile = false;
+        self.allowAudio = false;
         self.allowAudioRecorder = false;
         self.allowVideoRecorder = false;
-        
-        
-        self.allowCamera = (options[0] as! Int == 1);
+
+        self.allowCamera = (options["camera"] as! Int == 1);
         if (self.allowCamera) {self.allowedOptions+=1}
-        self.allowGallery = (options[1] as! Int == 1);
+        self.allowGallery = (options["gallery"] as! Int == 1);
         if (self.allowGallery) {self.allowedOptions+=1}
-        self.allowVideo = (options[2] as! Int == 1);
+        self.allowVideo = (options["video"] as! Int == 1);
         if (self.allowVideo) {self.allowedOptions+=1}
-        self.allowFile = (options[3] as! Int == 1);
+        self.allowFile = (options["file"] as! Int == 1);
         if (self.allowFile) {self.allowedOptions+=1}
-        self.allowAudioRecorder = (options[4] as! Int == 1);
+        self.allowAudioRecorder = (options["audiorecorder"] as! Int == 1);
         if (self.allowAudioRecorder) {self.allowedOptions+=1}
-        self.allowVideoRecorder = (options[5] as! Int == 1);
+        self.allowVideoRecorder = (options["videorecorder"] as! Int == 1);
         if (self.allowVideoRecorder) {self.allowedOptions+=1}
         
         if (self.allowedOptions == 0) {
@@ -66,6 +76,32 @@ import AVFoundation
             self.allowVideoRecorder = true;
             self.allowedOptions = 6
         }
+
+        var allowedmimes = 0;
+        let filetypeoptions = options["filetypes"] as! AnyObject
+        if (filetypeoptions["photo"] as! Int == 1) {
+            self.allowedDocumentTypes.append(kUTTypeImage as String);
+            allowedmimes+=1;
+        }
+        if (filetypeoptions["video"] as! Int == 1) {
+            self.allowedDocumentTypes.append(kUTTypeMovie as String);
+            self.allowedDocumentTypes.append(kUTTypeVideo as String);
+            allowedmimes+=1;
+        }
+        if (filetypeoptions["audio"] as! Int == 1) {
+            self.allowedDocumentTypes.append(kUTTypeMP3 as String);
+            self.allowedDocumentTypes.append(kUTTypeAudio as String);
+            allowedmimes+=1;
+        }
+        if (filetypeoptions["file"] as! Int == 1) {
+            self.allowedDocumentTypes.append(kUTTypePDF as String);
+            self.allowedDocumentTypes.append(kUTTypePlainText as String);
+            allowedmimes+=1;
+        }
+        if (allowedmimes == 0) {
+            // allow all mime types when none are set in options
+            self.allowedDocumentTypes = Constants.documentTypes;
+        } 
 
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
@@ -198,9 +234,9 @@ import AVFoundation
     @objc(pick:)
     func pick(command: CDVInvokedUrlCommand) {
         self.commandCallback = command.callbackId
-        let options = command.arguments.first as! NSArray
+        let options = command.arguments.first as! AnyObject
 
-         self.callPicker(options: options)
+        self.callPicker(options: options)
     }
 
 
@@ -233,7 +269,7 @@ import AVFoundation
     }
 
     fileprivate func file() {
-       let importMenuViewController = UIDocumentPickerViewController(documentTypes: Constants.documentTypes, in: .import)
+       let importMenuViewController = UIDocumentPickerViewController(documentTypes: self.allowedDocumentTypes, in: .import)
        importMenuViewController.delegate = self
        importMenuViewController.modalPresentationStyle = .formSheet
        currentViewController.present(importMenuViewController, animated: true, completion: nil)
