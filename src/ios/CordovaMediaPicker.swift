@@ -15,7 +15,7 @@ import AVFoundation
     var allowedOptions = 0;
     
     var lastInfo: [String : Any]?
-    var allowedDocumentTypes: [String : Any]?
+    var allowedDocumentTypes = [] as [String]
 
     struct Constants {
         static let camera = "Camera"
@@ -44,13 +44,12 @@ import AVFoundation
     var videoPickerBlock: ((_ data: URL) -> Void)?
     var filePickerBlock: ((_ url: URL) -> Void)?
 
-    func callPicker (options: NSArray) {
+    func callPicker (options: AnyObject) {
         self.allowedOptions = 0;
         self.allowCamera = false;
         self.allowGallery = false;
         self.allowVideo = false;
         self.allowFile = false;
-        self.allowAudio = false;
         self.allowAudioRecorder = false;
         self.allowVideoRecorder = false;
 
@@ -78,31 +77,34 @@ import AVFoundation
         }
 
         var allowedmimes = 0;
-        let filetypeoptions = options["filetypes"] as! AnyObject
+        var theDocumentTypes = [] as [String]
+        let filetypeoptions = options["filetypes"]!! as AnyObject
         if (filetypeoptions["photo"] as! Int == 1) {
-            self.allowedDocumentTypes.append(kUTTypeImage as String);
+            theDocumentTypes.append(kUTTypeImage as String);
             allowedmimes+=1;
         }
         if (filetypeoptions["video"] as! Int == 1) {
-            self.allowedDocumentTypes.append(kUTTypeMovie as String);
-            self.allowedDocumentTypes.append(kUTTypeVideo as String);
+            theDocumentTypes.append(kUTTypeMovie as String);
+            theDocumentTypes.append(kUTTypeVideo as String);
             allowedmimes+=1;
         }
         if (filetypeoptions["audio"] as! Int == 1) {
-            self.allowedDocumentTypes.append(kUTTypeMP3 as String);
-            self.allowedDocumentTypes.append(kUTTypeAudio as String);
+            theDocumentTypes.append(kUTTypeMP3 as String);
+            theDocumentTypes.append(kUTTypeAudio as String);
             allowedmimes+=1;
         }
         if (filetypeoptions["file"] as! Int == 1) {
-            self.allowedDocumentTypes.append(kUTTypePDF as String);
-            self.allowedDocumentTypes.append(kUTTypePlainText as String);
+            theDocumentTypes.append(kUTTypePDF as String);
+            theDocumentTypes.append(kUTTypePlainText as String);
             allowedmimes+=1;
         }
         if (allowedmimes == 0) {
             // allow all mime types when none are set in options
             self.allowedDocumentTypes = Constants.documentTypes;
-        } 
-
+        } else {
+            self.allowedDocumentTypes = theDocumentTypes
+        }
+        
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
             do {
@@ -234,7 +236,7 @@ import AVFoundation
     @objc(pick:)
     func pick(command: CDVInvokedUrlCommand) {
         self.commandCallback = command.callbackId
-        let options = command.arguments.first as! AnyObject
+        let options = command.arguments.first as AnyObject
 
         self.callPicker(options: options)
     }
@@ -442,7 +444,7 @@ extension CordovaMediaPicker: UIDocumentPickerDelegate  {
     func documentPicker(_ controller: UIDocumentPickerViewController,   didPickDocumentAt url: URL) {
         filePickerBlock?(url) //return file url if you selected from drive.
     }
-    func documentMenuWasCancelled(_ documentMenu: UIDocumentPickerViewController) {
+    func documentPickerWasCancelled(_ documentMenu: UIDocumentPickerViewController) {
         currentViewController.dismiss(animated: true, completion: nil)
     }
 }
