@@ -18,7 +18,7 @@ CordovaMediaPicker.prototype.pick = function(options, successCallback, errorCall
     pick_options.video = (options.video || options.all)?1:0;
     pick_options.file = (options.file || options.all)?1:0;
     pick_options.audiorecorder = (options.audiorecorder || options.all)?1:0;
-    pick_options.videorecorder = (options.camera || options.all)?1:0;
+    pick_options.videorecorder = (options.videorecorder || options.all)?1:0;
     pick_options.filetypes = options.filetypes || default_filetypes;
     
     var ios = options.ios?true:false;
