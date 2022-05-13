@@ -73,7 +73,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
     
     private int currentAction;              // Current action
     private String applicationId;
-    private String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf" };
+    private String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf", "text/plain" };
 
     @Override
     public boolean execute(String action, JSONArray args,
@@ -139,6 +139,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
                 }
                 if (filetypeoptions.has("file") && filetypeoptions.getInt("file") == 1) {
                     mimelist.add("application/pdf");
+                    mimelist.add("text/plain");
                     mimeCount++;
                 }
                 if (mimeCount > 0) {
