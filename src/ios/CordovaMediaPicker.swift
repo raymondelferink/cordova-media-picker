@@ -289,6 +289,7 @@ import AVFoundation
             pickerController.sourceType = .camera;
             pickerController.mediaTypes = [kUTTypeMovie as String]
             pickerController.cameraCaptureMode = .video;
+            pickerController..videoMaximumDuration = 30.0;
             currentViewController.present(pickerController, animated: true,   completion: nil)
         }
     }
