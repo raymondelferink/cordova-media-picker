@@ -405,7 +405,7 @@ public class CordovaMediaPicker extends CordovaPlugin {
             }
             
             result.put("type", typeString);
-            if (typeString.startsWith("image") || typeString.startsWith("application")) {
+            if (typeString.startsWith("image") || typeString.startsWith("audio") || typeString.startsWith("application")) {
                 try {
                     InputStream in = contentResolver.openInputStream(uri);
                     byte[] bytes = getBytes(in);
