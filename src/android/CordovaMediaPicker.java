@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -74,6 +75,8 @@ public class CordovaMediaPicker extends CordovaPlugin {
     private int currentAction;              // Current action
     private String applicationId;
     private String[] mimetypes = { "image/*", "video/*", "audio/*", "application/pdf", "text/plain" };
+
+    private Uri outputFileUri;
 
     @Override
     public boolean execute(String action, JSONArray args,
@@ -216,8 +219,20 @@ public class CordovaMediaPicker extends CordovaPlugin {
 
         if(!PermissionHelper.hasPermission(this, Manifest.permission.CAMERA)) {
             PermissionHelper.requestPermission(this, CHOOSE_CAMERA_SEC, Manifest.permission.CAMERA);
+        } else if(!PermissionHelper.hasPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            PermissionHelper.requestPermission(this, CHOOSE_CAMERA_SEC, Manifest.permission.READ_EXTERNAL_STORAGE);
+        } else if(!PermissionHelper.hasPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            PermissionHelper.requestPermission(this, CHOOSE_CAMERA_SEC, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         } else {
+            ContentValues values = new ContentValues(1);    
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg");    
+            outputFileUri = this.cordova.getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);    
+
             Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);    
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, outputFileUri);    
+
             cordova.startActivityForResult(this, intent, REQUEST_CODE);
         }
 
@@ -353,10 +368,14 @@ public class CordovaMediaPicker extends CordovaPlugin {
         JSONArray results = new JSONArray();
         Uri uri = null;
         ClipData clipData = null;
-
-        if (data != null) {
-            uri = data.getData();
-            clipData = data.getClipData();
+        
+        if (this.currentAction == ACTION_CAMERA) {
+            uri = outputFileUri;
+        } else {
+            if (data != null) {
+                uri = data.getData();
+                clipData = data.getClipData();
+            }
         }
         if (uri != null) {
             results.put(getMetadata(uri));
