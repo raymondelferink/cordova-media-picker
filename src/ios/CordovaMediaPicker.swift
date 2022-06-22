@@ -25,16 +25,6 @@ import AVFoundation
         static let audiorecorder = "Audio Recorder"
         static let videorecorder = "Video Recorder"
         static let cancel = "Cancel"
-        //static let documentTypes = ["com.microsoft.word.doc", "public.data", "org.openxmlformats.wordprocessingml.document", kUTTypePDF as String] //Use for specify type you need to pickup
-        static let documentTypes = [
-            kUTTypeImage as String, 
-            kUTTypeMovie as String, 
-            kUTTypeVideo as String, 
-            kUTTypeMP3 as String, 
-            kUTTypeAudio as String,
-            kUTTypePDF as String, 
-            kUTTypePlainText as String
-        ]
     }
 
     static let shared: CordovaMediaPicker = CordovaMediaPicker() //Singleton Pattern
@@ -100,10 +90,16 @@ import AVFoundation
         }
         if (allowedmimes == 0) {
             // allow all mime types when none are set in options
-            self.allowedDocumentTypes = Constants.documentTypes;
-        } else {
-            self.allowedDocumentTypes = theDocumentTypes
+            theDocumentTypes.append(kUTTypeImage as String);
+            theDocumentTypes.append(kUTTypeMovie as String);
+            theDocumentTypes.append(kUTTypeVideo as String);
+            theDocumentTypes.append(kUTTypeMP3 as String);
+            theDocumentTypes.append(kUTTypeAudio as String);
+            theDocumentTypes.append(kUTTypePDF as String);
+            theDocumentTypes.append(kUTTypePlainText as String);
+            allowedmimes = 7;
         }
+        self.allowedDocumentTypes = theDocumentTypes
         
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
