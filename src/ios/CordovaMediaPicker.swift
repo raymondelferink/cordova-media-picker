@@ -1,106 +1,139 @@
 import UIKit
 import MobileCoreServices
-import Foundation
 import AVFoundation
 
-@objc(CordovaMediaPicker) class CordovaMediaPicker : CDVPlugin {
+@objc(CordovaMediaPicker)
+class CordovaMediaPicker: CDVPlugin {
     var commandCallback: String?
+    var allowedOptions: Int = 0
 
-    var allowCamera = false
-    var allowGallery = false
-    var allowVideo = false
-    var allowFile = false
-    var allowAudioRecorder = false
-    var allowVideoRecorder = false
-    var allowedOptions = 0;
-    
-    var lastInfo: [String : Any]?
-    var allowedDocumentTypes = [] as [String]
+    var allowCamera: Bool = false
+    var allowGallery: Bool = false
+    var allowVideo: Bool = false
+    var allowFile: Bool = false
+    var allowAudioRecorder: Bool = false
+    var allowVideoRecorder: Bool = false
+
+    var allowedDocumentTypes: [String] = []
+
+    var cameraPickerBlock: ((_ base64: String) -> Void)? = nil
+    var imagePickerBlock: ((_ image: URL) -> Void)? = nil
+    var videoPickerBlock: ((_ data: URL) -> Void)? = nil
+    var filePickerBlock: ((_ url: URL) -> Void)? = nil
 
     struct Constants {
         static let camera = "Camera"
         static let gallery = "Gallery"
         static let video = "Video"
         static let file = "File"
-        static let audiorecorder = "Audio Recorder"
-        static let videorecorder = "Video Recorder"
+        static let audioRecorder = "Audio Recorder"
+        static let videoRecorder = "Video Recorder"
         static let cancel = "Cancel"
     }
 
-    static let shared: CordovaMediaPicker = CordovaMediaPicker() //Singleton Pattern
+    static let shared: CordovaMediaPicker = CordovaMediaPicker() // Singleton Pattern
     fileprivate var currentViewController: UIViewController!
-    var cameraPickerBlock: ((_ base64: String) -> Void)?
-    var imagePickerBlock: ((_ image: URL) -> Void)?
-    var videoPickerBlock: ((_ data: URL) -> Void)?
-    var filePickerBlock: ((_ url: URL) -> Void)?
 
-    func callPicker (options: AnyObject) {
-        self.allowedOptions = 0;
-        self.allowCamera = false;
-        self.allowGallery = false;
-        self.allowVideo = false;
-        self.allowFile = false;
-        self.allowAudioRecorder = false;
-        self.allowVideoRecorder = false;
+    override func pluginInitialize() {
+        super.pluginInitialize()
 
-        self.allowCamera = (options["camera"] as! Int == 1);
-        if (self.allowCamera) {self.allowedOptions+=1}
-        self.allowGallery = (options["gallery"] as! Int == 1);
-        if (self.allowGallery) {self.allowedOptions+=1}
-        self.allowVideo = (options["video"] as! Int == 1);
-        if (self.allowVideo) {self.allowedOptions+=1}
-        self.allowFile = (options["file"] as! Int == 1);
-        if (self.allowFile) {self.allowedOptions+=1}
-        self.allowAudioRecorder = (options["audiorecorder"] as! Int == 1);
-        if (self.allowAudioRecorder) {self.allowedOptions+=1}
-        self.allowVideoRecorder = (options["videorecorder"] as! Int == 1);
-        if (self.allowVideoRecorder) {self.allowedOptions+=1}
+        // Initialize default values
+        allowCamera = false
+        allowGallery = false
+        allowVideo = false
+        allowFile = false
+        allowAudioRecorder = false
+        allowVideoRecorder = false
+    }
+
+    @objc(pick:)
+    func pick(command: CDVInvokedUrlCommand) {
+        commandCallback = command.callbackId
+        let options = command.arguments.first as AnyObject
+        callPicker(options: options)
+    }
+
+    fileprivate func callPicker(options: AnyObject) {
+        allowedOptions = 0
+        allowedDocumentTypes.removeAll()
         
-        if (self.allowedOptions == 0) {
-            self.allowCamera = true;
-            self.allowGallery = true;
-            self.allowVideo = true;
-            self.allowFile = true;
-            self.allowAudioRecorder = true;
-            self.allowVideoRecorder = true;
-            self.allowedOptions = 6
+        // Initialize default values
+        allowCamera = false
+        allowGallery = false
+        allowVideo = false
+        allowFile = false
+        allowAudioRecorder = false
+        allowVideoRecorder = false
+
+        if let cameraOption = options["camera"] as? Int, cameraOption == 1 {
+            allowCamera = true
+            allowedOptions += 1
+        }
+        if let galleryOption = options["gallery"] as? Int, galleryOption == 1 {
+            allowGallery = true
+            allowedOptions += 1
+        }
+        if let videoOption = options["video"] as? Int, videoOption == 1 {
+            allowVideo = true
+            allowedOptions += 1
+        }
+        if let fileOption = options["file"] as? Int, fileOption == 1 {
+            allowFile = true
+            allowedOptions += 1
+        }
+        if let audioRecorderOption = options["audiorecorder"] as? Int, audioRecorderOption == 1 {
+            allowAudioRecorder = true
+            allowedOptions += 1
+        }
+        if let videoRecorderOption = options["videorecorder"] as? Int, videoRecorderOption == 1 {
+            allowVideoRecorder = true
+            allowedOptions += 1
         }
 
-        var allowedmimes = 0;
-        var theDocumentTypes = [] as [String]
-        let filetypeoptions = options["filetypes"]!! as AnyObject
-        if (filetypeoptions["photo"] as! Int == 1) {
-            theDocumentTypes.append(kUTTypeImage as String);
-            allowedmimes+=1;
+        if allowedOptions == 0 {
+            allowCamera = true
+            allowGallery = true
+            allowVideo = true
+            allowFile = true
+            allowAudioRecorder = true
+            allowVideoRecorder = true
+            allowedOptions = 6
         }
-        if (filetypeoptions["video"] as! Int == 1) {
-            theDocumentTypes.append(kUTTypeMovie as String);
-            theDocumentTypes.append(kUTTypeVideo as String);
-            allowedmimes+=1;
+
+        let fileTypeOptions = options["filetypes"] as? [String: Int] ?? [:]
+        var allowedMimes = 0
+
+        if fileTypeOptions["photo"] == 1 {
+            allowedDocumentTypes.append(kUTTypeImage as String)
+            allowedMimes += 1
         }
-        if (filetypeoptions["audio"] as! Int == 1) {
-            theDocumentTypes.append(kUTTypeMP3 as String);
-            theDocumentTypes.append(kUTTypeAudio as String);
-            allowedmimes+=1;
+        if fileTypeOptions["video"] == 1 {
+            allowedDocumentTypes.append(kUTTypeMovie as String)
+            allowedDocumentTypes.append(kUTTypeVideo as String)
+            allowedMimes += 1
         }
-        if (filetypeoptions["file"] as! Int == 1) {
-            theDocumentTypes.append(kUTTypePDF as String);
-            theDocumentTypes.append(kUTTypePlainText as String);
-            allowedmimes+=1;
+        if fileTypeOptions["audio"] == 1 {
+            allowedDocumentTypes.append(kUTTypeMP3 as String)
+            allowedDocumentTypes.append(kUTTypeAudio as String)
+            allowedMimes += 1
         }
-        if (allowedmimes == 0) {
-            // allow all mime types when none are set in options
-            theDocumentTypes.append(kUTTypeImage as String);
-            theDocumentTypes.append(kUTTypeMovie as String);
-            theDocumentTypes.append(kUTTypeVideo as String);
-            theDocumentTypes.append(kUTTypeMP3 as String);
-            theDocumentTypes.append(kUTTypeAudio as String);
-            theDocumentTypes.append(kUTTypePDF as String);
-            theDocumentTypes.append(kUTTypePlainText as String);
-            allowedmimes = 7;
+        if (fileTypeOptions["file"] == 1) {
+            allowedDocumentTypes.append(kUTTypePDF as String)
+            allowedDocumentTypes.append(kUTTypePlainText as String)
+            allowedMimes += 1
         }
-        self.allowedDocumentTypes = theDocumentTypes
-        
+
+        if allowedMimes == 0 {
+            allowedDocumentTypes.append(kUTTypeImage as String)
+            allowedDocumentTypes.append(kUTTypeMovie as String)
+            allowedDocumentTypes.append(kUTTypeVideo as String)
+            allowedDocumentTypes.append(kUTTypeMP3 as String)
+            allowedDocumentTypes.append(kUTTypeAudio as String)
+            allowedDocumentTypes.append(kUTTypePDF as String)
+            allowedDocumentTypes.append(kUTTypePlainText as String)
+            allowedMimes = 7
+        }
+
         //Receive Image
         self.cameraPickerBlock = { (base64) -> Void in
             do {
@@ -210,75 +243,120 @@ import AVFoundation
                 self.sendError(error.localizedDescription)
             }
         }
-
-        if (self.allowedOptions > 1) {
-            self.showActionSheet(viewController: self.viewController)
-        } else if (self.allowCamera) {
-            self.camera()
-        } else if (self.allowGallery) {
-            self.photoLibrary()
-        } else if (self.allowVideo) {
-            self.video()
+        
+        
+        
+        if allowedOptions > 1 {
+            showActionSheet()
+        } else if (allowCamera) {
+            self.showImagePicker(sourceType: .camera)
+        } else if (allowGallery) {
+            self.showImagePicker(sourceType: .photoLibrary)
+        } else if (allowVideo) {
+            self.showVideoPicker(sourceType: .photoLibrary)
         } else if (self.allowFile) {
-            self.file()
+            self.showDocumentPicker()
         } else if (self.allowAudioRecorder) {
-            self.audiorecorder()
+            self.showAudiorecorder()
         } else if (self.allowVideoRecorder) {
-            self.videorecorder()
+            self.showVideorecorder()
         } else {
             self.sendError("No options allowed")
         }
     }
-    @objc(pick:)
-    func pick(command: CDVInvokedUrlCommand) {
-        self.commandCallback = command.callbackId
-        let options = command.arguments.first as AnyObject
 
-        self.callPicker(options: options)
-    }
+    fileprivate func showActionSheet() {
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-
-    fileprivate func camera() {
-       if UIImagePickerController.isSourceTypeAvailable(.camera) {
-          let pickerController = UIImagePickerController()
-          pickerController.delegate = self;
-          pickerController.sourceType = .camera
-          currentViewController.present(pickerController, animated: true,   completion: nil)
-       }
-    }
-
-    fileprivate func photoLibrary() {
-       if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
-          let pickerController = UIImagePickerController()
-          pickerController.delegate = self;
-          pickerController.sourceType = .photoLibrary
-          currentViewController.present(pickerController, animated: true, completion: nil)
-       }
-    }
-
-    fileprivate func video() {
-        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
-           let pickerController = UIImagePickerController()
-           pickerController.delegate = self
-           pickerController.sourceType = .photoLibrary
-           pickerController.mediaTypes = [kUTTypeMovie as String, kUTTypeVideo as String]
-           currentViewController.present(pickerController, animated: true, completion: nil)
+        if allowCamera {
+            let cameraAction = UIAlertAction(title: Constants.camera, style: .default) { (_) in
+                self.showImagePicker(sourceType: .camera)
+            }
+            actionSheet.addAction(cameraAction)
         }
+
+        if allowGallery {
+            let galleryAction = UIAlertAction(title: Constants.gallery, style: .default) { (_) in
+                self.showImagePicker(sourceType: .photoLibrary)
+            }
+            actionSheet.addAction(galleryAction)
+        }
+
+        if allowVideo {
+            let videoAction = UIAlertAction(title: Constants.video, style: .default) { (_) in
+                self.showVideoPicker(sourceType: .photoLibrary)
+            }
+            actionSheet.addAction(videoAction)
+        }
+
+        if allowFile {
+            let fileAction = UIAlertAction(title: Constants.file, style: .default) { (_) in
+                self.showDocumentPicker()
+            }
+            actionSheet.addAction(fileAction)
+        }
+
+        if allowAudioRecorder {
+            let audioRecorderAction = UIAlertAction(title: Constants.audioRecorder, style: .default) { (_) in
+                // Start audio recorder
+                self.showAudiorecorder();
+            }
+            actionSheet.addAction(audioRecorderAction)
+        }
+
+        if allowVideoRecorder {
+            let videoRecorderAction = UIAlertAction(title: Constants.videoRecorder, style: .default) { (_) in
+                // Start video recorder
+                self.showVideorecorder();
+            }
+            actionSheet.addAction(videoRecorderAction)
+        }
+
+        let cancelAction = UIAlertAction(title: Constants.cancel, style: .cancel) { (_) in
+            self.commandCallback = nil
+        }
+        actionSheet.addAction(cancelAction)
+
+        if let popoverPresentationController = actionSheet.popoverPresentationController {
+            popoverPresentationController.sourceView = self.viewController.view
+            popoverPresentationController.sourceRect = self.viewController.view.bounds
+            popoverPresentationController.permittedArrowDirections = []
+        }
+
+        self.viewController.present(actionSheet, animated: true, completion: nil)
+    }
+    
+    fileprivate func showDocumentPicker() {
+        let documentPicker = UIDocumentPickerViewController(documentTypes: allowedDocumentTypes, in: .import)
+        documentPicker.delegate = self
+        documentPicker.modalPresentationStyle = .formSheet
+        self.viewController.present(documentPicker, animated: true, completion: nil)
     }
 
-    fileprivate func file() {
-       let importMenuViewController = UIDocumentPickerViewController(documentTypes: self.allowedDocumentTypes, in: .import)
-       importMenuViewController.delegate = self
-       importMenuViewController.modalPresentationStyle = .formSheet
-       currentViewController.present(importMenuViewController, animated: true, completion: nil)
+    fileprivate func showImagePicker(sourceType: UIImagePickerController.SourceType) {
+        let imagePicker = UIImagePickerController()
+        imagePicker.sourceType = sourceType
+        imagePicker.delegate = self
+        imagePicker.mediaTypes = [kUTTypeImage as String]
+        imagePicker.modalPresentationStyle = .fullScreen
+        self.viewController.present(imagePicker, animated: true, completion: nil)
     }
 
-    fileprivate func audiorecorder() {
+    fileprivate func showVideoPicker(sourceType: UIImagePickerController.SourceType) {
+        let videoPicker = UIImagePickerController()
+        videoPicker.sourceType = sourceType
+        videoPicker.delegate = self
+        videoPicker.mediaTypes = [kUTTypeMovie as String, kUTTypeVideo as String]
+        videoPicker.modalPresentationStyle = .fullScreen
+        self.viewController.present(videoPicker, animated: true, completion: nil)
+    }
+    
+    fileprivate func showAudiorecorder() {
         // use external audiorecorder
         self.send("OPEN_AUDIORECORDER")
     }
-
-    fileprivate func videorecorder() {
+    
+    fileprivate func showVideorecorder() {
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             let pickerController = UIImagePickerController()
             pickerController.delegate = self;
@@ -286,74 +364,8 @@ import AVFoundation
             pickerController.mediaTypes = [kUTTypeMovie as String]
             pickerController.cameraCaptureMode = .video;
             pickerController.videoMaximumDuration = 30.0;
-            currentViewController.present(pickerController, animated: true,   completion: nil)
+            self.viewController.present(pickerController, animated: true,   completion: nil)
         }
-    }
-
-    func showActionSheet(viewController: UIViewController) {
-        currentViewController = viewController
-        
-        // fix for ipad from: https://stackoverflow.com/a/60403127
-        var alertStyle = UIAlertController.Style.actionSheet
-        if (UIDevice.current.userInterfaceIdiom == .pad) {
-            alertStyle = UIAlertController.Style.alert
-        }
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: alertStyle)
-
-        if (self.allowCamera) {
-            let camera = UIAlertAction(title: Constants.camera, style: .default, handler: { (action) -> Void in
-               self.camera()
-            })
-            actionSheet.addAction(camera)
-        }
-
-        if (self.allowGallery) {
-            let gallery = UIAlertAction(title: Constants.gallery, style: .default, handler: { (action) -> Void in
-                self.photoLibrary()
-            })
-            actionSheet.addAction(gallery)
-        }
-
-        if (self.allowVideo) {
-            let video = UIAlertAction(title: Constants.video, style: .default, handler: { (action) -> Void in
-                self.video()
-            })
-            actionSheet.addAction(video)
-        }
-
-        if (self.allowFile) {
-            let file = UIAlertAction(title: Constants.file, style: .default, handler: { (action) -> Void in
-                self.file()
-            })
-            actionSheet.addAction(file)
-        }
-
-        if (self.allowAudioRecorder) {
-            let audiorecorder = UIAlertAction(title: Constants.audiorecorder, style: .default, handler: { (action) -> Void in
-                self.audiorecorder()
-            })
-            actionSheet.addAction(audiorecorder)
-        }
-
-        if (self.allowVideoRecorder) {
-            let videorecorder = UIAlertAction(title: Constants.videorecorder, style: .default, handler: { (action) -> Void in
-                self.videorecorder()
-            })
-            actionSheet.addAction(videorecorder)
-        }
-
-        let cancel = UIAlertAction(title: Constants.cancel, style: .cancel, handler: nil)
-        actionSheet.addAction(cancel)
-        
-        // fix for ipad from: https://stackoverflow.com/a/54932223
-    //    actionSheet.popoverPresentationController?.sourceView = currentViewController
-    //    actionSheet.popoverPresentationController?.sourceRect = currentViewController.bounds
-    //    // or maybe: actionSheet.popoverPresentationController?.sourceRect = CGRect(x: currentViewController.bounds.midX, y: currentViewController.bounds.midY, width: 0, height: 0)
-    //    actionSheet.popoverPresentationController?.permittedArrowDirections = []
-
-        
-
-        viewController.present(actionSheet, animated: true, completion: nil)
     }
     
     func detectMimeType (_ url: URL) -> String {
@@ -372,7 +384,7 @@ import AVFoundation
 
         return "application/octet-stream"
     }
-
+    
     func send (_ message: String, _ status: CDVCommandStatus = CDVCommandStatus_OK) {
         if let callbackId = self.commandCallback {
             self.commandCallback = nil
@@ -408,19 +420,26 @@ import AVFoundation
 }
 
 extension CordovaMediaPicker: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        currentViewController.dismiss(animated: true, completion: nil)
-    }
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        self.lastInfo = info;
+        picker.dismiss(animated: true, completion: nil)
 
         if let image = info[UIImagePickerControllerImageURL] as? URL {
             imagePickerBlock?(image) //return image when not null
         }
         else if let videoUrl = info[UIImagePickerControllerMediaURL] as? URL {
             //let data = try? Data(contentsOf: videoUrl)
-            videoPickerBlock?(videoUrl) //return video url when not null
+            let spliteArray = videoUrl.pathComponents
+            let lastString = spliteArray.last ?? ""
+            let fileManager = FileManager.default
+            let documentsDirectory = FileManager.default.temporaryDirectory
+            let filePath = documentsDirectory.appendingPathComponent(lastString)
+            do {
+                try fileManager.copyItem(at: videoUrl, to: filePath)
+                videoPickerBlock?(filePath) //return video url when not null
+            } catch {
+                print("Something went wrong")
+            }
+            
         }
         else if let image = info[UIImagePickerControllerOriginalImage] as? UIImage {
             let strBase64:String = UIImageJPEGRepresentation(image, 1)?.base64EncodedString() ?? ""
@@ -429,19 +448,26 @@ extension CordovaMediaPicker: UIImagePickerControllerDelegate, UINavigationContr
         else{
             print("Something went wrong")
         }
-        currentViewController.dismiss(animated: true, completion: nil)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true, completion: nil)
+        commandCallback = nil
     }
 }
 
-extension CordovaMediaPicker: UIDocumentPickerDelegate  {
-    func documentMenu(_ documentMenu: UIDocumentPickerViewController, didPickDocumentPicker documentPicker: UIDocumentPickerViewController) {
-        documentPicker.delegate = self
-        currentViewController.present(documentPicker, animated: true, completion: nil)
+
+
+extension CordovaMediaPicker: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        controller.dismiss(animated: true, completion: nil)
+        if let fileURL = urls.first {
+            filePickerBlock?(fileURL)
+        }
     }
-    func documentPicker(_ controller: UIDocumentPickerViewController,   didPickDocumentAt url: URL) {
-        filePickerBlock?(url) //return file url if you selected from drive.
-    }
-    func documentPickerWasCancelled(_ documentMenu: UIDocumentPickerViewController) {
-        currentViewController.dismiss(animated: true, completion: nil)
+
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        controller.dismiss(animated: true, completion: nil)
+        commandCallback = nil
     }
 }
